@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>포니쁘니 - 핸드폰 기종 확인</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: linear-gradient(160deg, #ff6b9d 0%, #c850c0 50%, #4158d0 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, 'Malgun Gothic', sans-serif;
+    padding: 20px;
+  }
+
+  /* 상단 로고 */
+  .shop-header {
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .shop-logo {
+    font-size: 42px;
+    margin-bottom: 6px;
+  }
+  .shop-name {
+    font-size: 28px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 2px;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  }
+  .shop-tagline {
+    font-size: 13px;
+    color: rgba(255,255,255,0.8);
+    margin-top: 4px;
+  }
+
+  /* 메인 카드 */
+  .card {
+    background: #fff;
+    border-radius: 28px;
+    padding: 32px 24px 26px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+  }
+  .card-top { text-align: center; margin-bottom: 22px; }
+  .card-top .icon { font-size: 52px; margin-bottom: 8px; }
+  .card-top h1 { font-size: 20px; font-weight: 800; color: #2d2d2d; margin-bottom: 3px; }
+  .card-top p  { font-size: 13px; color: #bbb; }
+
+  /* 결과 카드 - 삼성 */
+  .result-card {
+    border-radius: 20px;
+    padding: 22px 20px;
+    margin-bottom: 16px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .samsung-bg { background: linear-gradient(135deg, #1428A0, #0B52CE); }
+  .apple-bg   { background: linear-gradient(135deg, #1c1c1e, #48484a); }
+  .result-card::after {
+    position: absolute; bottom: -10px; right: 12px;
+    font-size: 36px; font-weight: 900;
+    opacity: .07; letter-spacing: 2px;
+  }
+  .samsung-bg::after { content: 'SAMSUNG'; }
+  .apple-bg::after   { content: 'APPLE'; }
+  .rl { font-size: 12px; opacity: .7; margin-bottom: 8px; }
+  .rm { font-size: 28px; font-weight: 900; line-height: 1.2; word-break: keep-all; }
+  .rs { font-size: 12px; opacity: .55; margin-top: 6px; }
+
+  /* 상세 정보 */
+  .info-box {
+    background: #f8f6ff;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 13px 16px;
+    border-bottom: 1px solid #ede9fe;
+    font-size: 14px;
+  }
+  .info-row:last-child { border-bottom: none; }
+  .ik { color: #888; }
+  .iv { color: #111; font-weight: 700; }
+
+  /* 아이폰 선택 버튼 */
+  #iphonePicker { display: none; }
+  .picker-title { font-size: 15px; font-weight: 700; color: #333; text-align: center; margin-bottom: 6px; }
+  .picker-sub   { font-size: 13px; color: #999; text-align: center; margin-bottom: 14px; line-height: 1.5; }
+  .pick-btn {
+    display: block; width: 100%;
+    background: #f8f6ff;
+    border: 2px solid #e0d9ff;
+    border-radius: 14px;
+    padding: 15px;
+    margin-bottom: 10px;
+    font-size: 17px; font-weight: 700;
+    color: #4158d0;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .pick-btn:active, .pick-btn:hover {
+    background: #4158d0; color: #fff; border-color: #4158d0;
+  }
+
+  /* 경고 */
+  #notSamsung { display: none; }
+  .warn-box {
+    background: #fff8e1; border: 2px solid #ffc107;
+    border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 16px;
+  }
+  .wi { font-size: 44px; margin-bottom: 10px; }
+  .wt { font-size: 17px; font-weight: 800; color: #856404; margin-bottom: 6px; }
+  .wd { font-size: 14px; color: #6c5a00; line-height: 1.6; }
+
+  /* 하단 */
+  .footer {
+    text-align: center;
+    margin-top: 18px;
+  }
+  .footer .shop-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 20px;
+    padding: 8px 20px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .notice { font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 10px; text-align: center; }
+</style>
+</head>
+<body>
+
+  <!-- 가게 로고 -->
+  <div class="shop-header">
+    <div class="shop-name">포니쁘니</div>
+    <div class="shop-tagline">📱 핸드폰 기종 확인 서비스</div>
+  </div>
+
+  <!-- 메인 카드 -->
+  <div class="card">
+    <div class="card-top">
+      <div class="icon">📱</div>
+      <h1>내 핸드폰 기종 확인</h1>
+      <p>자동으로 기종을 확인해 드려요</p>
+    </div>
+
+    <!-- 삼성 결과 -->
+    <div id="samsungResult" style="display:none">
+      <div class="result-card samsung-bg">
+        <div class="rl">📋 기종명</div>
+        <div class="rm" id="sModel">-</div>
+        <div class="rs" id="sCode"></div>
+      </div>
+      <div class="info-box">
+        <div class="info-row"><span class="ik">⚙️ 안드로이드 버전</span><span class="iv" id="sOs">-</span></div>
+        <div class="info-row"><span class="ik">📐 화면 해상도</span><span class="iv" id="sScreen">-</span></div>
+      </div>
+    </div>
+
+    <!-- 아이폰 결과 + 선택 -->
+    <div id="iphonePicker" style="display:none">
+      <div class="result-card apple-bg">
+        <div class="rl">📋 기종명</div>
+        <div class="rm" id="iModel">확인 중...</div>
+        <div class="rs" id="iSub"></div>
+      </div>
+      <div class="info-box">
+        <div class="info-row"><span class="ik">⚙️ 운영체제</span><span class="iv" id="iOs">-</span></div>
+        <div class="info-row"><span class="ik">📐 화면 해상도</span><span class="iv" id="iScreen">-</span></div>
+      </div>
+      <div id="pickerSection" style="display:none">
+        <div class="picker-title">🤔 비슷한 기종이 여럿 있어요</div>
+        <div class="picker-sub">아래에서 내 기종을 직접 골라주세요!<br>한 번만 탭하면 돼요 😊</div>
+        <div id="pickerBtns"></div>
+      </div>
+    </div>
+
+    <!-- 갤럭시·아이폰 아님 -->
+    <div id="notSamsung" style="display:none">
+      <div class="warn-box">
+        <div class="wi">⚠️</div>
+        <div class="wt" id="warnTitle">스마트폰에서 열어주세요</div>
+        <div class="wd" id="warnDesc">삼성 갤럭시 또는 아이폰에서 열어주세요.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 하단 가게 배지 -->
+  <div class="footer">
+    <div class="shop-badge">📱 포니쁘니</div>
+    <div class="notice">🔒 개인정보는 수집·저장되지 않습니다</div>
+  </div>
+
+<script>
+(function() {
+  var ua = navigator.userAgent;
+
+  var SM = {
+    // ── S26 시리즈 ──────────────────────────────
+    "SM-S941":"갤럭시 S26","SM-S946":"갤럭시 S26+","SM-S948":"갤럭시 S26 Ultra",
+    // ── S25 시리즈 ──────────────────────────────
+    "SM-S931":"갤럭시 S25","SM-S936":"갤럭시 S25+","SM-S938":"갤럭시 S25 Ultra",
+    // ── S24 시리즈 ──────────────────────────────
+    "SM-S921":"갤럭시 S24","SM-S926":"갤럭시 S24+","SM-S928":"갤럭시 S24 Ultra",
+    // ── S23 시리즈 ──────────────────────────────
+    "SM-S911":"갤럭시 S23","SM-S916":"갤럭시 S23+","SM-S918":"갤럭시 S23 Ultra",
+    "SM-S711":"갤럭시 S23 FE",
+    // ── S22 시리즈 ──────────────────────────────
+    "SM-S901":"갤럭시 S22","SM-S906":"갤럭시 S22+","SM-S908":"갤럭시 S22 Ultra",
+    // ── S21 시리즈 ──────────────────────────────
+    "SM-G991":"갤럭시 S21","SM-G996":"갤럭시 S21+","SM-G998":"갤럭시 S21 Ultra",
+    "SM-G990":"갤럭시 S21 FE",
+    // ── S20 시리즈 ──────────────────────────────
+    "SM-G981":"갤럭시 S20","SM-G986":"갤럭시 S20+","SM-G988":"갤럭시 S20 Ultra",
+    "SM-G780":"갤럭시 S20 FE",
+    // ── S10 시리즈 ──────────────────────────────
+    "SM-G973":"갤럭시 S10","SM-G975":"갤럭시 S10+",
+    "SM-G970":"갤럭시 S10e","SM-G977":"갤럭시 S10 5G",
+    // ── S9 시리즈 ───────────────────────────────
+    "SM-G960":"갤럭시 S9","SM-G965":"갤럭시 S9+",
+    // ── S8 시리즈 ───────────────────────────────
+    "SM-G950":"갤럭시 S8","SM-G955":"갤럭시 S8+",
+    "SM-G892":"갤럭시 S8 Active",
+    // ── S7 시리즈 ───────────────────────────────
+    "SM-G930":"갤럭시 S7","SM-G935":"갤럭시 S7 엣지",
+    "SM-G891":"갤럭시 S7 Active",
+    // ── S6 시리즈 ───────────────────────────────
+    "SM-G920":"갤럭시 S6","SM-G925":"갤럭시 S6 엣지",
+    "SM-G928":"갤럭시 S6 엣지+","SM-G890":"갤럭시 S6 Active",
+    // ── S5 이하 ─────────────────────────────────
+    "SM-G900":"갤럭시 S5","SM-G860":"갤럭시 S5 Active",
+    "SM-G800":"갤럭시 S5 미니",
+    "SM-I537":"갤럭시 S4 Active","SM-G386":"갤럭시 S4 미니",
+    // ── Z 폴드 시리즈 ────────────────────────────
+    "SM-F956":"갤럭시 Z 폴드6",
+    "SM-F946":"갤럭시 Z 폴드5",
+    "SM-F936":"갤럭시 Z 폴드4",
+    "SM-F926":"갤럭시 Z 폴드3",
+    "SM-F916":"갤럭시 Z 폴드2",
+    "SM-F907":"갤럭시 Z 폴드2 5G",
+    "SM-F900":"갤럭시 폴드",
+    // ── Z 플립 시리즈 ────────────────────────────
+    "SM-F741":"갤럭시 Z 플립6",
+    "SM-F731":"갤럭시 Z 플립5",
+    "SM-F721":"갤럭시 Z 플립4",
+    "SM-F711":"갤럭시 Z 플립3",
+    "SM-F707":"갤럭시 Z 플립 5G",
+    "SM-F700":"갤럭시 Z 플립",
+    // ── 노트 시리즈 ──────────────────────────────
+    "SM-N986":"갤럭시 노트20 Ultra","SM-N981":"갤럭시 노트20",
+    "SM-N976":"갤럭시 노트10+","SM-N971":"갤럭시 노트10+ 5G",
+    "SM-N970":"갤럭시 노트10","SM-N972":"갤럭시 노트10 5G",
+    "SM-N960":"갤럭시 노트9",
+    "SM-N950":"갤럭시 노트8",
+    "SM-N930":"갤럭시 노트7",
+    "SM-N920":"갤럭시 노트5",
+    "SM-N910":"갤럭시 노트4",
+    "SM-N900":"갤럭시 노트3",
+    "SM-N7100":"갤럭시 노트2",
+    // ── A시리즈 (최신) ───────────────────────────
+    "SM-A566":"갤럭시 A55 5G",
+    "SM-A546":"갤럭시 A54 5G",
+    "SM-A536":"갤럭시 A53 5G",
+    "SM-A528":"갤럭시 A52s 5G",
+    "SM-A525":"갤럭시 A52",
+    "SM-A526":"갤럭시 A52 5G",
+    "SM-A336":"갤럭시 A33 5G",
+    "SM-A326":"갤럭시 A32 5G",
+    "SM-A325":"갤럭시 A32",
+    "SM-A736":"갤럭시 A73 5G",
+    "SM-A725":"갤럭시 A72",
+    "SM-A715":"갤럭시 A71",
+    "SM-A716":"갤럭시 A71 5G",
+    "SM-A515":"갤럭시 A51",
+    "SM-A516":"갤럭시 A51 5G",
+    "SM-A155":"갤럭시 A15",
+    "SM-A156":"갤럭시 A15 5G",
+    "SM-A145":"갤럭시 A14",
+    "SM-A146":"갤럭시 A14 5G",
+    "SM-A135":"갤럭시 A13",
+    "SM-A136":"갤럭시 A13 5G",
+    "SM-A125":"갤럭시 A12",
+    "SM-A115":"갤럭시 A11",
+    "SM-A105":"갤럭시 A10",
+    "SM-A426":"갤럭시 A42 5G",
+    "SM-A415":"갤럭시 A41",
+    "SM-A405":"갤럭시 A40",
+    "SM-A315":"갤럭시 A31",
+    "SM-A305":"갤럭시 A30",
+    "SM-A307":"갤럭시 A30s",
+    "SM-A215":"갤럭시 A21",
+    "SM-A217":"갤럭시 A21s",
+    "SM-A205":"갤럭시 A20",
+    "SM-A207":"갤럭시 A20s",
+    "SM-A202":"갤럭시 A20e",
+    // ── A시리즈 (구형) ───────────────────────────
+    "SM-A750":"갤럭시 A7 (2018)",
+    "SM-A730":"갤럭시 A8+ (2018)",
+    "SM-A720":"갤럭시 A7 (2017)",
+    "SM-A710":"갤럭시 A7 (2016)",
+    "SM-A700":"갤럭시 A7",
+    "SM-A600":"갤럭시 A6",
+    "SM-A605":"갤럭시 A6+",
+    "SM-A530":"갤럭시 A8 (2018)",
+    "SM-A520":"갤럭시 A5 (2017)",
+    "SM-A510":"갤럭시 A5 (2016)",
+    "SM-A500":"갤럭시 A5",
+    "SM-A320":"갤럭시 A3 (2017)",
+    "SM-A310":"갤럭시 A3 (2016)",
+    "SM-A300":"갤럭시 A3",
+    // ── J시리즈 ──────────────────────────────────
+    "SM-J810":"갤럭시 J8",
+    "SM-J730":"갤럭시 J7 Pro",
+    "SM-J720":"갤럭시 J7 Duo",
+    "SM-J710":"갤럭시 J7 (2016)",
+    "SM-J701":"갤럭시 J7 Core",
+    "SM-J700":"갤럭시 J7",
+    "SM-J610":"갤럭시 J6+",
+    "SM-J600":"갤럭시 J6",
+    "SM-J530":"갤럭시 J5 Pro",
+    "SM-J510":"갤럭시 J5 (2016)",
+    "SM-J500":"갤럭시 J5",
+    "SM-J415":"갤럭시 J4+",
+    "SM-J410":"갤럭시 J4 Core",
+    "SM-J400":"갤럭시 J4",
+    "SM-J330":"갤럭시 J3 Pro",
+    "SM-J320":"갤럭시 J3 (2016)",
+    "SM-J310":"갤럭시 J3 (2015)",
+    "SM-J300":"갤럭시 J3",
+    "SM-J250":"갤럭시 J2 Pro",
+    "SM-J260":"갤럭시 J2 Core",
+    "SM-J200":"갤럭시 J2",
+    "SM-J120":"갤럭시 J1 (2016)",
+    "SM-J110":"갤럭시 J1 Ace",
+    "SM-J100":"갤럭시 J1",
+    // ── M시리즈 ──────────────────────────────────
+    "SM-M546":"갤럭시 M54 5G",
+    "SM-M536":"갤럭시 M53 5G",
+    "SM-M526":"갤럭시 M52 5G",
+    "SM-M515":"갤럭시 M51",
+    "SM-M315":"갤럭시 M31",
+    "SM-M305":"갤럭시 M30",
+    "SM-M215":"갤럭시 M21",
+    "SM-M205":"갤럭시 M20",
+    "SM-M115":"갤럭시 M11",
+    "SM-M105":"갤럭시 M10",
+    // ── W시리즈 (프리미엄 접이식) ────────────────
+    "SM-W2021":"갤럭시 W21 5G",
+    "SM-W2020":"갤럭시 W20 5G",
+    "SM-W2019":"갤럭시 W2019",
+    "SM-W2018":"갤럭시 W2018",
+    // ── XCover (방수 강화) ───────────────────────
+    "SM-G736":"갤럭시 XCover6 Pro",
+    "SM-G525":"갤럭시 XCover5",
+    "SM-G715":"갤럭시 XCover Pro",
+    // ── 퀀텀 / 기타 ─────────────────────────────
+    "SM-A716S":"갤럭시 퀀텀",
+    "SM-A826S":"갤럭시 퀀텀2",
+    "SM-A236S":"갤럭시 퀀텀3",
+    "SM-E025":"갤럭시 F02s",
+    "SM-E426":"갤럭시 F42 5G",
+  };
+
+  // 아이폰: [iOS최소, iOS최대, [후보목록]]
+  var IP = {
+    "1320x2868": [18,99,["아이폰 16 Pro Max"]],
+    "1206x2622": [18,99,["아이폰 16 Pro"]],
+    "1290x2796_18":[18,99,["아이폰 16 Plus","아이폰 15 Plus"]],
+    "1290x2796_17":[17,17,["아이폰 15 Plus","아이폰 14 Pro Max"]],
+    "1290x2796_0": [0,16, ["아이폰 14 Pro Max"]],
+    "1179x2556_18":[18,99,["아이폰 16","아이폰 15 Pro"]],
+    "1179x2556_17":[17,17,["아이폰 15 Pro"]],
+    "1179x2556_0": [0,16, ["아이폰 14 Pro"]],
+    "1170x2532_17":[17,99,["아이폰 14","아이폰 13"]],
+    "1170x2532_0": [0,16, ["아이폰 13"]],
+    "1080x2340_15":[15,99,["아이폰 13 mini"]],
+    "1080x2340_0": [0,14, ["아이폰 12 mini"]],
+    "1284x2778_15":[15,99,["아이폰 13 Pro Max"]],
+    "1284x2778_0": [0,14, ["아이폰 12 Pro Max"]],
+    "1125x2436_13":[13,99,["아이폰 11 Pro"]],
+    "1125x2436_0": [0,12, ["아이폰 X","아이폰 XS"]],
+    "828x1792_14": [14,99,["아이폰 11"]],
+    "828x1792_0":  [0,13, ["아이폰 XR"]],
+    "1242x2688":   [0,99, ["아이폰 XS Max"]],
+    "750x1334":    [0,99, ["아이폰 SE (2~3세대)","아이폰 8","아이폰 7"]],
+  };
+
+  function show(id){ document.getElementById(id).style.display='block'; }
+  function txt(id,v){ document.getElementById(id).textContent=v; }
+
+  if (/SM-[A-Z0-9]/.test(ua)) {
+    show('samsungResult');
+    var m = ua.match(/SM-([A-Z0-9]+)/);
+    var code = m ? "SM-"+m[1] : "";
+    var name = SM[code.substring(0,7)] || ("삼성 갤럭시 ("+code+")");
+    txt('sModel', name);
+    txt('sCode', code ? "모델코드: "+code : "");
+    var av = ua.match(/Android ([\d.]+)/);
+    txt('sOs', av ? "안드로이드 "+av[1] : "-");
+    txt('sScreen', screen.width+"×"+screen.height);
+
+  } else if (/iPhone/.test(ua)) {
+    show('iphonePicker');
+    var vm = ua.match(/OS (\d+)_(\d+)/);
+    var ios = vm ? parseInt(vm[1]) : 0;
+    txt('iOs', vm ? "iOS "+vm[1]+"."+vm[2] : "iOS");
+    txt('iScreen', screen.width+"×"+screen.height);
+
+    var pw = Math.round(Math.min(screen.width,screen.height)*devicePixelRatio);
+    var ph = Math.round(Math.max(screen.width,screen.height)*devicePixelRatio);
+    var base = pw+"x"+ph;
+
+    var cands = null;
+    var suffixes = ["_"+ios, "_18","_17","_15","_14","_13","_0",""];
+    for (var i=0; i<suffixes.length; i++) {
+      var row = IP[base+suffixes[i]] || IP[base];
+      if (row && ios>=row[0] && ios<=row[1]) { cands=row[2]; break; }
+    }
+
+    if (!cands) {
+      txt('iModel', "아이폰 ("+pw+"×"+ph+")");
+      txt('iSub', "목록에 없는 기종이에요");
+    } else if (cands.length===1) {
+      txt('iModel', cands[0]);
+    } else {
+      txt('iModel', cands[0]);
+      txt('iSub', "아래에서 정확한 기종을 골라주세요 👇");
+      var sec = document.getElementById('pickerSection');
+      var btns = document.getElementById('pickerBtns');
+      sec.style.display='block';
+      cands.forEach(function(name){
+        var btn = document.createElement('button');
+        btn.className='pick-btn';
+        btn.textContent=name;
+        btn.onclick=function(){
+          txt('iModel',name);
+          txt('iSub','✅ 선택 완료!');
+          sec.style.display='none';
+        };
+        btns.appendChild(btn);
+      });
+    }
+
+  } else {
+    show('notSamsung');
+    if (/Android/.test(ua)) {
+      txt('warnTitle','삼성 갤럭시가 아닌 안드로이드예요');
+      txt('warnDesc','이 페이지는 삼성 갤럭시와 아이폰 전용이에요.');
+    } else {
+      txt('warnTitle','스마트폰에서 열어주세요');
+      txt('warnDesc','PC나 태블릿에서는 확인이 어려워요.\n핸드폰으로 다시 열어주세요.');
+    }
+  }
+})();
+</script>
+</body>
+</html>
