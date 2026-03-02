@@ -24,8 +24,7 @@ body{background:linear-gradient(160deg,#1a1a6e,#c850c0);min-height:100vh;display
 .info-box{background:#f8f6ff;border-radius:16px;overflow:hidden;margin-bottom:16px}
 .info-row{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid #ede9fe;font-size:14px}
 .info-row:last-child{border-bottom:none}
-.ik{color:#888}
-.iv{color:#111;font-weight:700}
+.ik{color:#888}.iv{color:#111;font-weight:700}
 .pick-title{font-size:15px;font-weight:700;color:#333;text-align:center;margin-bottom:6px}
 .pick-sub{font-size:13px;color:#999;text-align:center;margin-bottom:14px;line-height:1.5}
 .pick-btn{display:block;width:100%;background:#f8f6ff;border:2px solid #e0d9ff;border-radius:14px;padding:15px;margin-bottom:10px;font-size:17px;font-weight:700;color:#4158d0;cursor:pointer}
@@ -33,6 +32,7 @@ body{background:linear-gradient(160deg,#1a1a6e,#c850c0);min-height:100vh;display
 .wi{font-size:44px;margin-bottom:10px}
 .wt{font-size:17px;font-weight:800;color:#856404;margin-bottom:6px}
 .wd{font-size:14px;color:#6c5a00;line-height:1.6}
+.open-btn{display:block;width:100%;background:linear-gradient(135deg,#1428A0,#0B52CE);border:none;border-radius:14px;padding:16px;margin-top:14px;font-size:17px;font-weight:700;color:#fff;cursor:pointer}
 .footer{text-align:center;margin-top:18px}
 .badge{display:inline-block;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:20px;padding:8px 20px;color:#fff;font-size:14px;font-weight:700}
 .notice{font-size:11px;color:rgba(255,255,255,.6);margin-top:10px;text-align:center}
@@ -43,7 +43,6 @@ body{background:linear-gradient(160deg,#1a1a6e,#c850c0);min-height:100vh;display
   <div class="shop-name">포니쁘니</div>
   <div class="shop-sub">📱 핸드폰 기종 확인 서비스</div>
 </div>
-
 <div class="card">
   <div class="card-top">
     <div class="icon">📱</div>
@@ -52,12 +51,10 @@ body{background:linear-gradient(160deg,#1a1a6e,#c850c0);min-height:100vh;display
   </div>
   <div id="result"></div>
 </div>
-
 <div class="footer">
   <div class="badge">📱 포니쁘니</div>
   <div class="notice">🔒 개인정보는 수집·저장되지 않습니다</div>
 </div>
-
 <script>
 var ua = navigator.userAgent;
 var out = document.getElementById('result');
@@ -88,7 +85,7 @@ var SM = {
   "SM-N910":"갤럭시 노트4","SM-N900":"갤럭시 노트3",
   "SM-A566":"갤럭시 A55","SM-A546":"갤럭시 A54","SM-A536":"갤럭시 A53",
   "SM-A528":"갤럭시 A52s","SM-A525":"갤럭시 A52","SM-A526":"갤럭시 A52 5G",
-  "SM-A336":"갤럭시 A33","SM-A326":"갤럭시 A32","SM-A325":"갤럭시 A32",
+  "SM-A336":"갤럭시 A33","SM-A326":"갤럭시 A32 5G","SM-A325":"갤럭시 A32",
   "SM-A736":"갤럭시 A73","SM-A725":"갤럭시 A72","SM-A715":"갤럭시 A71",
   "SM-A515":"갤럭시 A51","SM-A516":"갤럭시 A51 5G",
   "SM-A155":"갤럭시 A15","SM-A156":"갤럭시 A15 5G",
@@ -141,8 +138,8 @@ var IP = {
 function makeResult(bgClass, modelName, modelCode, osStr, screenStr) {
   return '<div class="result-card '+bgClass+'">'
     +'<div class="rl">📋 기종명</div>'
-    +'<div class="rm">'+modelName+'</div>'
-    +(modelCode?'<div class="rs">'+modelCode+'</div>':'')
+    +'<div class="rm" id="modelNm">'+modelName+'</div>'
+    +(modelCode?'<div class="rs" id="modelSub">'+modelCode+'</div>':'')
     +'</div>'
     +'<div class="info-box">'
     +'<div class="info-row"><span class="ik">⚙️ 운영체제</span><span class="iv">'+osStr+'</span></div>'
@@ -150,11 +147,17 @@ function makeResult(bgClass, modelName, modelCode, osStr, screenStr) {
     +'</div>';
 }
 
-if (/SM-[A-Z0-9]/.test(ua)) {
+// 카카오톡/네이버 등 인앱브라우저 감지
+var isInApp = /KAKAO|NAVER|Instagram|FB_IAB|Line/i.test(ua);
+
+// 삼성 갤럭시 감지 - SM- 또는 Samsung 키워드 둘 다 체크
+var isSamsung = /SM-[A-Z0-9]/.test(ua) || /SamsungBrowser/.test(ua);
+
+if (isSamsung) {
   var m = ua.match(/SM-([A-Z0-9]+)/);
   var code = m ? 'SM-'+m[1] : '';
   var code4 = code.substring(0,7);
-  var name = SM[code4] || ('삼성 갤럭시 ('+code+')');
+  var name = (code && SM[code4]) ? SM[code4] : (code ? '삼성 갤럭시 ('+code+')' : '삼성 갤럭시');
   var av = ua.match(/Android ([\d.]+)/);
   var os = av ? '안드로이드 '+av[1] : '-';
   out.innerHTML = makeResult('samsung-bg', name, code?'모델코드: '+code:'', os, screen.width+'×'+screen.height);
@@ -170,32 +173,50 @@ if (/SM-[A-Z0-9]/.test(ua)) {
   var suffixes = ['_'+ios,'_18','_17','_15','_14','_13','_0',''];
   for (var i=0; i<suffixes.length; i++) {
     var key = base+suffixes[i];
-    if (!IP[key]) key = base;
     if (IP[key] && ios>=IP[key][0] && ios<=IP[key][1]) { cands=IP[key][2]; break; }
+    if (!cands && IP[base]) cands=IP[base][2];
   }
   if (!cands) cands = ['아이폰 ('+pw+'×'+ph+')'];
-
-  if (cands.length === 1) {
+  if (cands.length===1) {
     out.innerHTML = makeResult('apple-bg', cands[0], '', iosStr, screen.width+'×'+screen.height);
   } else {
     var html = makeResult('apple-bg', cands[0], '아래에서 정확한 기종을 골라주세요 👇', iosStr, screen.width+'×'+screen.height);
     html += '<div class="pick-title">🤔 비슷한 기종이 여럿 있어요</div>';
     html += '<div class="pick-sub">한 번만 탭하면 돼요 😊</div>';
     for (var j=0; j<cands.length; j++) {
-      html += '<button class="pick-btn" onclick="selectModel(this,\''+cands[j]+'\')">'+cands[j]+'</button>';
+      html += '<button class="pick-btn" onclick="sel(this,\''+cands[j]+'\')">'+cands[j]+'</button>';
     }
     out.innerHTML = html;
   }
 
 } else if (/Android/.test(ua)) {
-  out.innerHTML = '<div class="warn-box"><div class="wi">⚠️</div><div class="wt">삼성 갤럭시가 아닌 기기예요</div><div class="wd">삼성 갤럭시 또는 아이폰에서 열어주세요.</div></div>';
+  // 안드로이드인데 SM- 없는 경우 → 카카오톡 등 인앱브라우저 가능성
+  if (isInApp) {
+    out.innerHTML = '<div class="warn-box">'
+      +'<div class="wi">⚠️</div>'
+      +'<div class="wt">브라우저로 열어주세요</div>'
+      +'<div class="wd">카카오톡 등 앱 안에서는 기종 감지가 어려워요.<br>아래 버튼을 눌러 기본 브라우저로 열어주세요!</div>'
+      +'<button class="open-btn" onclick="location.href=location.href">🌐 브라우저로 열기</button>'
+      +'</div>';
+  } else {
+    out.innerHTML = '<div class="warn-box">'
+      +'<div class="wi">⚠️</div>'
+      +'<div class="wt">삼성 갤럭시가 아닌 기기예요</div>'
+      +'<div class="wd">삼성 갤럭시 또는 아이폰에서 열어주세요.</div>'
+      +'</div>';
+  }
 } else {
-  out.innerHTML = '<div class="warn-box"><div class="wi">📱</div><div class="wt">핸드폰에서 열어주세요</div><div class="wd">PC나 태블릿에서는 기종을 확인할 수 없어요.</div></div>';
+  out.innerHTML = '<div class="warn-box">'
+    +'<div class="wi">📱</div>'
+    +'<div class="wt">핸드폰에서 열어주세요</div>'
+    +'<div class="wd">PC나 태블릿에서는 기종을 확인할 수 없어요.</div>'
+    +'</div>';
 }
 
-function selectModel(btn, name) {
-  document.querySelector('.rm').textContent = name;
-  document.querySelector('.rs').textContent = '✅ 선택 완료!';
+function sel(btn, name) {
+  document.getElementById('modelNm').textContent = name;
+  var sub = document.getElementById('modelSub');
+  if(sub) sub.textContent = '✅ 선택 완료!';
   btn.parentNode.remove();
 }
 </script>
