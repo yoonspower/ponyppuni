@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>디버그</title>
+<style>
+body{font-family:sans-serif;padding:20px;background:#f0f0f0}
+.box{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;word-break:break-all;font-size:13px}
+h2{font-size:16px;color:#333;margin-bottom:8px}
+.val{color:#1428A0;font-weight:700}
+</style>
+</head>
+<body>
+<div class="box"><h2>User-Agent 전체</h2><div class="val" id="ua"></div></div>
+<div class="box"><h2>SM- 코드 감지</h2><div class="val" id="sm"></div></div>
+<div class="box"><h2>Samsung 브라우저</h2><div class="val" id="sb"></div></div>
+<div class="box"><h2>Android 여부</h2><div class="val" id="an"></div></div>
+<script>
+var ua = navigator.userAgent;
+document.getElementById('ua').textContent = ua;
+var sm = ua.match(/SM-([A-Z0-9]+)/);
+document.getElementById('sm').textContent = sm ? sm[0] : '없음';
+document.getElementById('sb').textContent = /SamsungBrowser/.test(ua) ? '감지됨' : '없음';
+document.getElementById('an').textContent = /Android/.test(ua) ? '안드로이드' : '아님';
+</script>
+</body>
+</html>
