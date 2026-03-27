@@ -282,13 +282,13 @@ if (isSamsung) {
   if (cands.length===1) {
     out.innerHTML = makeResult('apple-bg', cands[0], '', iosStr, screen.width+'×'+screen.height) + inAppTip;
   } else {
-    var html = makeResult('apple-bg', cands[0], '아래에서 정확한 기종을 골라주세요 👇', iosStr, screen.width+'×'+screen.height);
-    html += '<div class="pick-title">🤔 비슷한 기종이 여럿 있어요</div>';
-    html += '<div class="pick-sub">한 번만 탭하면 돼요 😊</div>';
+    var html = '<div class="pick-title">🤔 비슷한 기종이 여럿 있어요</div>';
+    html += '<div class="pick-sub">내 기종을 선택해 주세요 😊</div>';
     for (var j=0; j<cands.length; j++) {
-      html += '<button class="pick-btn" onclick="sel(this,\''+cands[j]+'\')">'+cands[j]+'</button>';
+      html += '<button class="pick-btn" onclick="selFull(this,\''+cands[j]+'\',\''+iosStr+'\')">'+cands[j]+'</button>';
     }
-    out.innerHTML = html + inAppTip;
+    html += inAppTip;
+    out.innerHTML = html;
   }
 
 } else if (/Android/.test(ua)) {
@@ -338,6 +338,10 @@ function sel(btn, name) {
   var sub = document.getElementById('modelSub');
   if(sub) sub.textContent = '✅ 선택 완료!';
   btn.parentNode.remove();
+}
+
+function selFull(btn, name, iosStr) {
+  out.innerHTML = makeResult('apple-bg', name, '✅ 선택 완료!', iosStr, screen.width+'×'+screen.height);
 }
 </script>
 </body>
