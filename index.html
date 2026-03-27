@@ -32,7 +32,9 @@ body{background:linear-gradient(160deg,#1a1a6e,#c850c0);min-height:100vh;display
 .wi{font-size:44px;margin-bottom:10px}
 .wt{font-size:17px;font-weight:800;color:#856404;margin-bottom:6px}
 .wd{font-size:14px;color:#6c5a00;line-height:1.6}
+.android-bg{background:linear-gradient(135deg,#3ddc84,#00796b)}
 .open-btn{display:block;width:100%;background:linear-gradient(135deg,#1428A0,#0B52CE);border:none;border-radius:14px;padding:16px;margin-top:14px;font-size:17px;font-weight:700;color:#fff;cursor:pointer}
+.tip-box{background:#e8f5e9;border:2px solid #66bb6a;border-radius:16px;padding:16px;text-align:center;margin-bottom:16px;font-size:13px;color:#2e7d32;line-height:1.5}
 .footer{text-align:center;margin-top:18px}
 .badge{display:inline-block;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:20px;padding:8px 20px;color:#fff;font-size:14px;font-weight:700}
 .notice{font-size:11px;color:rgba(255,255,255,.6);margin-top:10px;text-align:center}
@@ -213,18 +215,54 @@ function makeResult(bgClass, modelName, modelCode, osStr, screenStr) {
     +'</div>';
 }
 
-// 삼성 감지 (카카오톡 인앱브라우저 포함)
+// 삼성 감지 (카카오톡 등 인앱브라우저 포함)
 var isSamsung = /SM-[A-Z0-9]/.test(ua) || /SamsungBrowser/.test(ua);
-var isInApp = /KAKAO|NAVER|Instagram|FB_IAB|Line/i.test(ua);
+var isInApp = /KAKAO|NAVER|Instagram|FB_IAB|Line|FBAN|FBAV|Twitter|Snapchat|Whale/i.test(ua);
+
+// Build/ 문자열에서 모델명 추출 (인앱브라우저 대응)
+function extractBuildModel() {
+  var bm = ua.match(/;\s*([^;)]+)\s*Build\//);
+  if (bm) {
+    var model = bm[1].trim();
+    // SM- 코드가 포함되어 있으면 삼성 모델로 처리
+    var smInBuild = model.match(/SM-[A-Z0-9]+/);
+    if (smInBuild) return { type:'samsung', code:smInBuild[0], raw:model };
+    return { type:'android', code:'', raw:model };
+  }
+  return null;
+}
+
+// 삼성 기기 결과 렌더링
+function renderSamsung(code, extraHtml) {
+  var code4 = code.substring(0,7);
+  var name = SM[code4] ? SM[code4] : '삼성 갤럭시 ('+code+')';
+  var av = ua.match(/Android ([\d.]+)/);
+  var os = av ? '안드로이드 '+av[1] : '-';
+  out.innerHTML = makeResult('samsung-bg', name, '모델코드: '+code, os, screen.width+'×'+screen.height)
+    + (extraHtml || '');
+}
+
+// 인앱 브라우저 안내 팁
+var inAppTip = isInApp
+  ? '<div class="tip-box">💡 인앱 브라우저에서 감지한 결과입니다.<br>더 정확한 결과를 원하시면 <a href="'+location.href+'" target="_blank" style="color:#1428A0;font-weight:700">기본 브라우저로 열기</a></div>'
+  : '';
 
 if (isSamsung) {
   var m = ua.match(/SM-([A-Z0-9]+)/);
   var code = m ? 'SM-'+m[1] : '';
-  var code4 = code.substring(0,7);
-  var name = (code && SM[code4]) ? SM[code4] : (code ? '삼성 갤럭시 ('+code+')' : '삼성 갤럭시');
-  var av = ua.match(/Android ([\d.]+)/);
-  var os = av ? '안드로이드 '+av[1] : '-';
-  out.innerHTML = makeResult('samsung-bg', name, code ? '모델코드: '+code : '', os, screen.width+'×'+screen.height);
+  if (code) {
+    renderSamsung(code, inAppTip);
+  } else {
+    // SamsungBrowser만 감지된 경우 Build/에서 추출 시도
+    var bm = extractBuildModel();
+    if (bm && bm.type==='samsung') {
+      renderSamsung(bm.code, inAppTip);
+    } else {
+      var av = ua.match(/Android ([\d.]+)/);
+      var os = av ? '안드로이드 '+av[1] : '-';
+      out.innerHTML = makeResult('samsung-bg', '삼성 갤럭시', '', os, screen.width+'×'+screen.height) + inAppTip;
+    }
+  }
 
 } else if (/iPhone/.test(ua)) {
   var vm = ua.match(/OS (\d+)_(\d+)/);
@@ -242,7 +280,7 @@ if (isSamsung) {
   if (!cands) cands = ['아이폰 ('+pw+'×'+ph+')'];
 
   if (cands.length===1) {
-    out.innerHTML = makeResult('apple-bg', cands[0], '', iosStr, screen.width+'×'+screen.height);
+    out.innerHTML = makeResult('apple-bg', cands[0], '', iosStr, screen.width+'×'+screen.height) + inAppTip;
   } else {
     var html = makeResult('apple-bg', cands[0], '아래에서 정확한 기종을 골라주세요 👇', iosStr, screen.width+'×'+screen.height);
     html += '<div class="pick-title">🤔 비슷한 기종이 여럿 있어요</div>';
@@ -250,23 +288,42 @@ if (isSamsung) {
     for (var j=0; j<cands.length; j++) {
       html += '<button class="pick-btn" onclick="sel(this,\''+cands[j]+'\')">'+cands[j]+'</button>';
     }
-    out.innerHTML = html;
+    out.innerHTML = html + inAppTip;
   }
 
 } else if (/Android/.test(ua)) {
-  if (isInApp) {
-    out.innerHTML = '<div class="warn-box">'
-      +'<div class="wi">⚠️</div>'
-      +'<div class="wt">브라우저로 열어주세요</div>'
-      +'<div class="wd">카카오톡 등 앱 안에서는 기종 감지가 어려울 수 있어요.<br>아래 버튼을 눌러 기본 브라우저로 열어주세요!</div>'
-      +'<button class="open-btn" onclick="location.href=location.href">🌐 브라우저로 열기</button>'
-      +'</div>';
+  var bm = extractBuildModel();
+  var av = ua.match(/Android ([\d.]+)/);
+  var os = av ? '안드로이드 '+av[1] : '안드로이드';
+
+  if (bm && bm.type==='samsung') {
+    // Build/에서 삼성 모델 코드 발견
+    renderSamsung(bm.code, inAppTip);
+  } else if (bm && bm.raw) {
+    // 비삼성 안드로이드 - 모델명 표시
+    out.innerHTML = makeResult('android-bg', bm.raw, '', os, screen.width+'×'+screen.height) + inAppTip;
   } else {
-    out.innerHTML = '<div class="warn-box">'
-      +'<div class="wi">⚠️</div>'
-      +'<div class="wt">삼성 갤럭시가 아닌 기기예요</div>'
-      +'<div class="wd">삼성 갤럭시 또는 아이폰에서 열어주세요.</div>'
-      +'</div>';
+    // 모델 정보 없음 - 기본 정보 표시 + userAgentData 시도
+    out.innerHTML = makeResult('android-bg', '안드로이드 기기', '모델 정보를 불러오는 중...', os, screen.width+'×'+screen.height) + inAppTip;
+    // navigator.userAgentData API로 모델 정보 시도
+    if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
+      navigator.userAgentData.getHighEntropyValues(['model','platformVersion']).then(function(d) {
+        if (d.model) {
+          var smCheck = d.model.match(/SM-[A-Z0-9]+/);
+          if (smCheck) {
+            renderSamsung(smCheck[0], inAppTip);
+          } else {
+            out.innerHTML = makeResult('android-bg', d.model || '안드로이드 기기', '', os, screen.width+'×'+screen.height) + inAppTip;
+          }
+        } else {
+          document.getElementById('modelSub').textContent = '';
+        }
+      }).catch(function() {
+        document.getElementById('modelSub').textContent = '';
+      });
+    } else {
+      document.getElementById('modelSub').textContent = '';
+    }
   }
 } else {
   out.innerHTML = '<div class="warn-box">'

@@ -16,6 +16,17 @@ h2{font-size:16px;color:#333;margin-bottom:8px}
 <div class="box"><h2>SM- 코드 감지</h2><div class="val" id="sm"></div></div>
 <div class="box"><h2>Samsung 브라우저</h2><div class="val" id="sb"></div></div>
 <div class="box"><h2>Android 여부</h2><div class="val" id="an"></div></div>
+<div class="box"><h2>인앱 브라우저 감지</h2><div class="val" id="inapp"></div></div>
+<div class="box"><h2>Build/ 모델 추출</h2><div class="val" id="build"></div></div>
+<div class="box"><h2>iPhone 여부</h2><div class="val" id="iphone"></div></div>
+<div class="box"><h2>userAgentData 모델</h2><div class="val" id="uad"></div></div>
+<div class="box"><h2>화면 해상도</h2><div class="val" id="screen"></div></div>
+<div class="box"><h2>devicePixelRatio</h2><div class="val" id="dpr"></div></div>
+<div class="box"><h2>물리 해상도 (추정)</h2><div class="val" id="phys"></div></div>
+
+<h2 style="margin:20px 0 10px;color:#333">인앱 UA 시뮬레이션 테스트</h2>
+<div class="box" id="test-results" style="font-size:12px;line-height:1.8"></div>
+
 <script>
 var ua = navigator.userAgent;
 document.getElementById('ua').textContent = ua;
@@ -23,6 +34,96 @@ var sm = ua.match(/SM-([A-Z0-9]+)/);
 document.getElementById('sm').textContent = sm ? sm[0] : '없음';
 document.getElementById('sb').textContent = /SamsungBrowser/.test(ua) ? '감지됨' : '없음';
 document.getElementById('an').textContent = /Android/.test(ua) ? '안드로이드' : '아님';
+
+// 인앱 브라우저 감지
+var inAppApps = ['KAKAO','NAVER','Instagram','FB_IAB','Line','FBAN','FBAV','Twitter','Snapchat','Whale'];
+var detectedApps = inAppApps.filter(function(app) { return new RegExp(app,'i').test(ua); });
+document.getElementById('inapp').textContent = detectedApps.length ? detectedApps.join(', ') : '없음 (일반 브라우저)';
+
+// Build/ 모델 추출
+var bm = ua.match(/;\s*([^;)]+)\s*Build\//);
+document.getElementById('build').textContent = bm ? bm[1].trim() : '없음';
+
+// iPhone
+document.getElementById('iphone').textContent = /iPhone/.test(ua) ? '감지됨' : '없음';
+
+// userAgentData
+if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
+  navigator.userAgentData.getHighEntropyValues(['model','platformVersion','architecture','fullVersionList']).then(function(d) {
+    document.getElementById('uad').textContent = d.model ? d.model + ' (platform: '+d.platformVersion+')' : '모델 정보 없음';
+  }).catch(function(e) { document.getElementById('uad').textContent = '오류: '+e.message; });
+} else {
+  document.getElementById('uad').textContent = 'API 미지원';
+}
+
+// 화면 정보
+document.getElementById('screen').textContent = screen.width + '×' + screen.height;
+document.getElementById('dpr').textContent = devicePixelRatio;
+var pw = Math.round(Math.min(screen.width,screen.height)*devicePixelRatio);
+var ph = Math.round(Math.max(screen.width,screen.height)*devicePixelRatio);
+document.getElementById('phys').textContent = pw + '×' + ph;
+
+// ── 인앱 UA 시뮬레이션 테스트 ──
+var testCases = [
+  { name:'카카오톡 삼성 S25 Ultra', ua:'Mozilla/5.0 (Linux; Android 15; SM-S938N Build/AP3A) AppleWebKit/537.36 KAKAOTALK 10.5.0', expect:'갤럭시 S25 Ultra' },
+  { name:'네이버 삼성 A54', ua:'Mozilla/5.0 (Linux; Android 14; SM-A546N Build/UP1A) AppleWebKit/537.36 NAVER(inapp;)', expect:'갤럭시 A54 5G' },
+  { name:'인스타 삼성 Z플립6', ua:'Mozilla/5.0 (Linux; Android 14; SM-F741N Build/UP1A) AppleWebKit/537.36 Instagram 320.0', expect:'갤럭시 Z 플립6' },
+  { name:'카카오톡 아이폰', ua:'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 KAKAOTALK', expect:'아이폰' },
+  { name:'카카오톡 LG(비삼성)', ua:'Mozilla/5.0 (Linux; Android 13; LM-V510N Build/TKQ1) AppleWebKit/537.36 KAKAOTALK', expect:'LM-V510N' },
+  { name:'FB 비삼성 (Pixel)', ua:'Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro Build/UD1A) AppleWebKit/537.36 FB_IAB', expect:'Pixel 8 Pro' },
+  { name:'일반 삼성 브라우저', ua:'Mozilla/5.0 (Linux; Android 15; SM-S928N Build/AP3A) SamsungBrowser/27.0', expect:'갤럭시 S25 Ultra' },
+  { name:'SM코드 없는 삼성', ua:'Mozilla/5.0 (Linux; Android 14; SAMSUNG Build/UP1A) SamsungBrowser/25.0', expect:'삼성 갤럭시' },
+];
+
+var SM_TEST = {
+  "SM-S938":"갤럭시 S25 Ultra","SM-A546":"갤럭시 A54 5G","SM-F741":"갤럭시 Z 플립6",
+  "SM-S928":"갤럭시 S25 Ultra"
+};
+
+function simulateDetect(testUa) {
+  var isSam = /SM-[A-Z0-9]/.test(testUa) || /SamsungBrowser/.test(testUa);
+  var isIP = /iPhone/.test(testUa);
+  var isAnd = /Android/.test(testUa);
+  var bmTest = testUa.match(/;\s*([^;)]+)\s*Build\//);
+
+  if (isSam) {
+    var m = testUa.match(/SM-([A-Z0-9]+)/);
+    var code = m ? 'SM-'+m[1] : '';
+    if (code) {
+      var code4 = code.substring(0,7);
+      return SM_TEST[code4] ? SM_TEST[code4] : '삼성 갤럭시 ('+code+')';
+    }
+    if (bmTest) {
+      var smInBuild = bmTest[1].match(/SM-[A-Z0-9]+/);
+      if (smInBuild) { var c4=smInBuild[0].substring(0,7); return SM_TEST[c4]||'삼성('+smInBuild[0]+')'; }
+    }
+    return '삼성 갤럭시';
+  }
+  if (isIP) return '아이폰';
+  if (isAnd && bmTest) {
+    var raw = bmTest[1].trim();
+    var smB = raw.match(/SM-[A-Z0-9]+/);
+    if (smB) { var c4=smB[0].substring(0,7); return SM_TEST[c4]||'삼성('+smB[0]+')'; }
+    return raw;
+  }
+  return '감지 실패';
+}
+
+var html = '';
+var pass = 0;
+for (var t=0; t<testCases.length; t++) {
+  var tc = testCases[t];
+  var result = simulateDetect(tc.ua);
+  var ok = result.indexOf(tc.expect) >= 0;
+  if (ok) pass++;
+  html += '<div style="padding:6px 0;border-bottom:1px solid #eee">'
+    + (ok ? '✅' : '❌') + ' <b>'+tc.name+'</b><br>'
+    + '&nbsp;&nbsp;결과: <span style="color:'+(ok?'#2e7d32':'#c62828')+'">'+result+'</span>'
+    + ' (기대: '+tc.expect+')'
+    + '</div>';
+}
+html = '<div style="margin-bottom:12px;font-size:15px;font-weight:700">테스트 결과: '+pass+'/'+testCases.length+' 통과</div>' + html;
+document.getElementById('test-results').innerHTML = html;
 </script>
 </body>
 </html>
