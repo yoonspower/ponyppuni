@@ -44,8 +44,13 @@ KEY_MAP = {
     'left': Key.left, 'right': Key.right,
 }
 
-# 현재 눌린 키 추적
+# 현재 눌린 키 추적 (스레드 안전)
 pressed_keys = set()
+pressed_keys_lock = threading.Lock()
+
+# 활성 클라이언트 (1개만 허용)
+active_client_lock = threading.Lock()
+active_client = None
 
 PORT = 9877
 
@@ -66,33 +71,51 @@ def get_local_ip():
 def press_key(key_name):
     """키 누르기"""
     key = KEY_MAP.get(key_name)
-    if key and key_name not in pressed_keys:
+    if not key:
+        return
+    with pressed_keys_lock:
+        if key_name in pressed_keys:
+            return
         pressed_keys.add(key_name)
-        try:
-            keyboard.press(key)
-        except Exception as e:
-            print(f"  키 입력 오류: {e}")
+    try:
+        keyboard.press(key)
+    except Exception as e:
+        print(f"  키 입력 오류: {e}")
 
 
 def release_key(key_name):
     """키 떼기"""
     key = KEY_MAP.get(key_name)
-    if key and key_name in pressed_keys:
+    if not key:
+        return
+    with pressed_keys_lock:
+        if key_name not in pressed_keys:
+            return
         pressed_keys.discard(key_name)
-        try:
-            keyboard.release(key)
-        except Exception as e:
-            print(f"  키 해제 오류: {e}")
+    try:
+        keyboard.release(key)
+    except Exception as e:
+        print(f"  키 해제 오류: {e}")
 
 
 def release_all():
     """모든 키 해제"""
-    for key_name in list(pressed_keys):
+    with pressed_keys_lock:
+        keys_to_release = list(pressed_keys)
+    for key_name in keys_to_release:
         release_key(key_name)
 
 
 def handle_client(conn, addr):
-    """클라이언트 연결 처리"""
+    """클라이언트 연결 처리 (1개만 허용)"""
+    global active_client
+    with active_client_lock:
+        if active_client is not None:
+            print(f"  연결 거부 (이미 접속 중): {addr[0]}")
+            conn.close()
+            return
+        active_client = conn
+
     print(f"\n  태블릿 연결됨: {addr[0]}")
     print("  게임패드 입력 수신 중...\n")
 
@@ -130,6 +153,9 @@ def handle_client(conn, addr):
     finally:
         release_all()
         conn.close()
+        with active_client_lock:
+            global active_client
+            active_client = None
         print(f"  태블릿 연결 해제: {addr[0]}")
 
 
@@ -164,6 +190,7 @@ def main():
             t.start()
     except KeyboardInterrupt:
         print("\n  서버 종료")
+    finally:
         release_all()
         server.close()
 

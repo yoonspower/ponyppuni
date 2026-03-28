@@ -47,7 +47,7 @@ class NetworkClient:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.settimeout(3)
             self.sock.connect((ip, PORT))
-            self.sock.settimeout(None)
+            self.sock.settimeout(5)
             self.connected = True
             return True
         except Exception as e:
@@ -108,7 +108,8 @@ class Button:
 
         # 글자
         txt_alpha = min(alpha + 60, 255)
-        txt_surf = font.render(self.label, True, (*WHITE, txt_alpha))
+        txt_surf = font.render(self.label, True, WHITE)
+        txt_surf.set_alpha(txt_alpha)
         txt_rect = txt_surf.get_rect(center=self.rect.center)
         screen.blit(txt_surf, txt_rect)
 
@@ -137,7 +138,8 @@ class CircleButton(Button):
         screen.blit(surf, (self.cx - self.r, self.cy - self.r))
 
         txt_alpha = min(alpha + 60, 255)
-        txt_surf = font.render(self.label, True, (*WHITE, txt_alpha))
+        txt_surf = font.render(self.label, True, WHITE)
+        txt_surf.set_alpha(txt_alpha)
         txt_rect = txt_surf.get_rect(center=(self.cx, self.cy))
         screen.blit(txt_surf, txt_rect)
 
@@ -161,6 +163,7 @@ class Joystick:
         self.touch_id = None
         self.keys = {'up': False, 'down': False, 'left': False, 'right': False}
         self.key_map = {'up': 'w', 'down': 's', 'left': 'a', 'right': 'd'}
+        self.dir_font = pygame.font.SysFont(None, 20)
 
     def draw(self, screen, pad_alpha):
         if self.active:
@@ -181,10 +184,10 @@ class Joystick:
             (self.cx - self.base_r + 18, self.cy, '◀', self.keys['left']),
             (self.cx + self.base_r - 18, self.cy, '▶', self.keys['right']),
         ]
-        dir_font = pygame.font.SysFont(None, 20)
         for dx, dy, ch, on in dirs:
             a = min(alpha + 80, 255) if on else alpha // 2
-            ts = dir_font.render(ch, True, (*WHITE, a))
+            ts = self.dir_font.render(ch, True, WHITE)
+            ts.set_alpha(a)
             screen.blit(ts, ts.get_rect(center=(dx, dy)))
 
         # 썸 (움직이는 원)
@@ -266,6 +269,9 @@ class GamePad:
         self.ip_text = ''
         self.connect_msg = ''
         self.touch_map = {}  # touch_id -> button/joystick
+        self._numpad_rects = []
+        self._connect_btn_rect = pygame.Rect(0, 0, 0, 0)
+        self._toggle_rect = pygame.Rect(0, 0, 0, 0)
 
         self._init_controls()
 
@@ -360,14 +366,14 @@ class GamePad:
         t = self.font_title.render("Steam Gaming Pad", True, WHITE)
         self.screen.blit(t, t.get_rect(center=(self.W // 2, self.H // 4)))
 
-        sub = self.font.render("PC server IP address:", True, (*WHITE, 150))
+        sub = self.font.render("PC server IP address:", True, (180, 180, 180))
         self.screen.blit(sub, sub.get_rect(center=(self.W // 2, self.H // 4 + 50)))
 
         # IP 입력 박스
         box_w, box_h = 320, 50
         box_rect = pygame.Rect(self.W // 2 - box_w // 2, self.H // 2 - box_h // 2, box_w, box_h)
         pygame.draw.rect(self.screen, DARK_GRAY, box_rect, border_radius=12)
-        pygame.draw.rect(self.screen, (*WHITE, 80), box_rect, width=2, border_radius=12)
+        pygame.draw.rect(self.screen, (100, 100, 100), box_rect, width=2, border_radius=12)
 
         ip_surf = self.font_lg.render(self.ip_text + "|", True, WHITE)
         self.screen.blit(ip_surf, ip_surf.get_rect(center=box_rect.center))
@@ -388,7 +394,7 @@ class GamePad:
             self._numpad_rects.append((r, k))
 
             pygame.draw.rect(self.screen, DARK_GRAY, r, border_radius=10)
-            pygame.draw.rect(self.screen, (*WHITE, 60), r, width=1, border_radius=10)
+            pygame.draw.rect(self.screen, (80, 80, 80), r, width=1, border_radius=10)
             ks = self.font.render(k, True, WHITE)
             self.screen.blit(ks, ks.get_rect(center=r.center))
 
@@ -405,7 +411,7 @@ class GamePad:
             self.screen.blit(ms, ms.get_rect(center=(self.W // 2, btn_rect.bottom + 30)))
 
         # ESC 안내
-        esc = self.font_sm.render("ESC = exit", True, (*WHITE, 80))
+        esc = self.font_sm.render("ESC = exit", True, (80, 80, 80))
         self.screen.blit(esc, (10, self.H - 25))
 
         pygame.display.flip()
@@ -415,16 +421,15 @@ class GamePad:
         ty = int(event.y * self.H)
         pos = (tx, ty)
 
-        if hasattr(self, '_numpad_rects'):
-            for r, k in self._numpad_rects:
-                if r.collidepoint(pos):
-                    if k == '<':
-                        self.ip_text = self.ip_text[:-1]
-                    else:
-                        self.ip_text += k
-                    return
+        for r, k in self._numpad_rects:
+            if r.collidepoint(pos):
+                if k == '<':
+                    self.ip_text = self.ip_text[:-1]
+                else:
+                    self.ip_text += k
+                return
 
-        if hasattr(self, '_connect_btn_rect') and self._connect_btn_rect.collidepoint(pos):
+        if self._connect_btn_rect.collidepoint(pos):
             self._try_connect()
 
     def _try_connect(self):
@@ -453,6 +458,12 @@ class GamePad:
                     self.state = 'connect'
                     self.connect_msg = ''
                     return
+                elif event.key in (pygame.K_PLUS, pygame.K_EQUALS, pygame.K_KP_PLUS):
+                    self.pad_alpha = min(self.pad_alpha + 10, 200)
+                elif event.key in (pygame.K_MINUS, pygame.K_KP_MINUS):
+                    self.pad_alpha = max(self.pad_alpha - 10, 10)
+                elif event.key == pygame.K_t:
+                    self._toggle_pad()
             elif event.type == pygame.FINGERDOWN:
                 pos = self._get_touch_pos(event)
                 # 토글 버튼 체크 (항상 우선)
@@ -485,12 +496,8 @@ class GamePad:
                 btn.draw(self.screen, self.font, self.pad_alpha)
 
             # 상태 표시
-            status = self.font_sm.render("Connected | ESC = back", True, (*WHITE, 60))
+            status = self.font_sm.render("Connected | ESC=back | +/-=opacity", True, (60, 60, 60))
             self.screen.blit(status, (self.W // 2 - status.get_width() // 2, self.H - 20))
-
-            # 투명도 표시
-            op_text = self.font_sm.render(f"Opacity: {self.pad_alpha}", True, (*WHITE, 60))
-            self.screen.blit(op_text, (self.W - 120, self.H - 20))
 
         # 토글 버튼 (패드 숨겨도 항상 표시)
         self._draw_toggle_btn()
@@ -498,10 +505,10 @@ class GamePad:
         pygame.display.flip()
 
     def _draw_toggle_btn(self):
-        """패드 ON/OFF 토글 버튼 (항상 표시)"""
-        tw, th = 50, 50
+        """패드 ON/OFF 토글 버튼 (항상 표시, 우측 상단)"""
+        tw, th = 50, 34
         margin = 10
-        self._toggle_rect = pygame.Rect(self.W - tw - margin, self.H // 2 - th // 2, tw, th)
+        self._toggle_rect = pygame.Rect(self.W // 2 - tw // 2, self.H - th - margin, tw, th)
 
         surf = pygame.Surface((tw, th), pygame.SRCALPHA)
         if self.pad_visible:
