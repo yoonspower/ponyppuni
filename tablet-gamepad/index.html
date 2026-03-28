@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>터치 게이밍 패드</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  background: #1a1a2e;
+  font-family: -apple-system, 'Malgun Gothic', sans-serif;
+}
+
+/* ── 전체 레이아웃 ── */
+#pad {
+  position: fixed; inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #16213e 100%);
+}
+
+/* ── 상단 바 ── */
+#topbar {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+}
+#topbar .title {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+#topbar .status {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #00e676;
+  box-shadow: 0 0 8px #00e676;
+}
+.status-text {
+  color: rgba(255,255,255,0.6);
+  font-size: 12px;
+}
+
+/* ── 왼쪽: 방향 조이스틱 ── */
+#left-zone {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  flex-shrink: 0;
+}
+#joystick-base {
+  position: absolute;
+  width: 200px; height: 200px;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 70%, transparent 100%);
+  border: 2px solid rgba(255,255,255,0.12);
+}
+#joystick-thumb {
+  position: absolute;
+  width: 70px; height: 70px;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(100,140,255,0.9), rgba(60,80,200,0.7));
+  border: 2px solid rgba(150,180,255,0.5);
+  box-shadow: 0 0 20px rgba(80,120,255,0.4), inset 0 -2px 6px rgba(0,0,0,0.3);
+  transition: box-shadow 0.15s;
+}
+#joystick-thumb.active {
+  box-shadow: 0 0 30px rgba(80,120,255,0.7), inset 0 -2px 6px rgba(0,0,0,0.3);
+}
+
+/* 방향 표시 */
+.dir-indicator {
+  position: absolute;
+  color: rgba(255,255,255,0.15);
+  font-size: 22px;
+  font-weight: 900;
+  pointer-events: none;
+}
+.dir-indicator.up    { top: 8px;   left: 50%; transform: translateX(-50%); }
+.dir-indicator.down  { bottom: 8px; left: 50%; transform: translateX(-50%); }
+.dir-indicator.left  { left: 12px; top: 50%; transform: translateY(-50%); }
+.dir-indicator.right { right: 12px; top: 50%; transform: translateY(-50%); }
+.dir-indicator.active { color: rgba(100,160,255,0.8); }
+
+/* ── 가운데: L/R 트리거 + 특수 버튼 ── */
+#center-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+.trigger-row {
+  display: flex;
+  gap: 24px;
+}
+.trigger-btn {
+  width: 70px; height: 36px;
+  border-radius: 18px;
+  border: 2px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.5);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.trigger-btn.active {
+  background: rgba(255,200,50,0.3);
+  border-color: rgba(255,200,50,0.6);
+  color: #ffd740;
+  box-shadow: 0 0 15px rgba(255,200,50,0.3);
+}
+.special-row {
+  display: flex;
+  gap: 16px;
+}
+.special-btn {
+  width: 48px; height: 28px;
+  border-radius: 14px;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.4);
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.special-btn.active {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.4);
+  color: #fff;
+}
+
+/* ── 오른쪽: ABXY 버튼 ── */
+#right-zone {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  flex-shrink: 0;
+}
+.action-btn {
+  position: absolute;
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  border: 2.5px solid;
+  font-size: 20px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.action-btn.btn-a {
+  bottom: 8px; left: 50%; transform: translateX(-50%);
+  background: radial-gradient(circle at 40% 35%, rgba(76,175,80,0.85), rgba(40,120,50,0.7));
+  border-color: rgba(100,220,100,0.5);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(76,175,80,0.3);
+}
+.action-btn.btn-b {
+  right: 8px; top: 50%; transform: translateY(-50%);
+  background: radial-gradient(circle at 40% 35%, rgba(244,67,54,0.85), rgba(180,30,30,0.7));
+  border-color: rgba(255,100,100,0.5);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(244,67,54,0.3);
+}
+.action-btn.btn-x {
+  left: 8px; top: 50%; transform: translateY(-50%);
+  background: radial-gradient(circle at 40% 35%, rgba(33,150,243,0.85), rgba(20,90,180,0.7));
+  border-color: rgba(80,170,255,0.5);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(33,150,243,0.3);
+}
+.action-btn.btn-y {
+  top: 8px; left: 50%; transform: translateX(-50%);
+  background: radial-gradient(circle at 40% 35%, rgba(255,193,7,0.85), rgba(200,150,0,0.7));
+  border-color: rgba(255,220,80,0.5);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(255,193,7,0.3);
+}
+.action-btn.active {
+  transform-origin: center;
+  filter: brightness(1.4);
+}
+.action-btn.btn-a.active { transform: translateX(-50%) scale(0.9); box-shadow: 0 2px 25px rgba(76,175,80,0.6); }
+.action-btn.btn-b.active { transform: translateY(-50%) scale(0.9); box-shadow: 0 2px 25px rgba(244,67,54,0.6); }
+.action-btn.btn-x.active { transform: translateY(-50%) scale(0.9); box-shadow: 0 2px 25px rgba(33,150,243,0.6); }
+.action-btn.btn-y.active { transform: translateX(-50%) scale(0.9); box-shadow: 0 2px 25px rgba(255,193,7,0.6); }
+
+/* ── 하단: D-Pad (십자키) ── */
+#dpad-zone {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  width: 140px;
+  height: 140px;
+}
+.dpad-btn {
+  position: absolute;
+  width: 44px; height: 44px;
+  background: rgba(255,255,255,0.08);
+  border: 1.5px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.5);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.dpad-btn.dpad-up    { top: 0;    left: 50%; transform: translateX(-50%); border-radius: 10px 10px 4px 4px; }
+.dpad-btn.dpad-down  { bottom: 0; left: 50%; transform: translateX(-50%); border-radius: 4px 4px 10px 10px; }
+.dpad-btn.dpad-left  { left: 0;   top: 50%; transform: translateY(-50%); border-radius: 10px 4px 4px 10px; }
+.dpad-btn.dpad-right { right: 0;  top: 50%; transform: translateY(-50%); border-radius: 4px 10px 10px 4px; }
+.dpad-center {
+  position: absolute;
+  width: 44px; height: 44px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255,255,255,0.04);
+  border-radius: 6px;
+}
+.dpad-btn.active {
+  background: rgba(150,180,255,0.3);
+  border-color: rgba(150,180,255,0.6);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(100,140,255,0.3);
+}
+
+/* ── 하단 오른쪽: 추가 버튼 (R1 R2) ── */
+#extra-zone {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  gap: 12px;
+}
+.extra-btn {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.4);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.extra-btn.active {
+  background: rgba(200,150,255,0.3);
+  border-color: rgba(200,150,255,0.6);
+  color: #e0b0ff;
+  box-shadow: 0 0 15px rgba(200,150,255,0.3);
+}
+
+/* ── 키 로그 (디버그) ── */
+#keylog {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 8px 16px;
+  color: rgba(255,255,255,0.7);
+  font-size: 12px;
+  font-family: monospace;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 50;
+  transition: opacity 0.3s;
+}
+
+/* ── 설정 패널 ── */
+#settings-panel {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 200;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+#settings-panel.open { display: flex; }
+#settings-panel h2 {
+  color: #fff;
+  font-size: 22px;
+  margin-bottom: 12px;
+}
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255,255,255,0.8);
+  font-size: 14px;
+}
+.setting-row label { min-width: 120px; }
+.setting-row input[type=range] { width: 160px; }
+.setting-row select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  font-size: 13px;
+}
+.close-settings {
+  margin-top: 20px;
+  padding: 10px 32px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ── 진동 피드백 알림 ── */
+.vibrate-notice {
+  position: fixed;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255,200,50,0.15);
+  border: 1px solid rgba(255,200,50,0.3);
+  border-radius: 10px;
+  padding: 6px 16px;
+  color: rgba(255,200,50,0.9);
+  font-size: 12px;
+  z-index: 90;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+.vibrate-notice.show { opacity: 1; }
+
+/* ── 가로모드 유도 ── */
+@media (orientation: portrait) {
+  #rotate-msg {
+    display: flex !important;
+  }
+  #pad { display: none !important; }
+  #topbar { display: none !important; }
+  #dpad-zone { display: none !important; }
+  #extra-zone { display: none !important; }
+  #keylog { display: none !important; }
+}
+#rotate-msg {
+  display: none;
+  position: fixed; inset: 0;
+  background: linear-gradient(135deg, #0f0f23, #1a1a3e);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 999;
+}
+#rotate-msg .icon { font-size: 64px; animation: rotate-anim 2s ease-in-out infinite; }
+#rotate-msg .msg { color: #fff; font-size: 18px; font-weight: 700; }
+#rotate-msg .sub { color: rgba(255,255,255,0.5); font-size: 13px; }
+@keyframes rotate-anim {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(90deg); }
+  50% { transform: rotate(90deg); }
+  75% { transform: rotate(0deg); }
+}
+</style>
+</head>
+<body>
+
+<!-- 가로모드 전환 안내 -->
+<div id="rotate-msg">
+  <div class="icon">📱</div>
+  <div class="msg">태블릿을 가로로 돌려주세요</div>
+  <div class="sub">게이밍 패드는 가로 모드에서 사용할 수 있어요</div>
+</div>
+
+<!-- 상단 바 -->
+<div id="topbar">
+  <div class="title">TOUCH GAMEPAD</div>
+  <div class="status">
+    <span class="status-text" id="mode-label">키보드 모드</span>
+    <span class="status-dot"></span>
+    <button class="special-btn" onclick="toggleSettings()" style="width:28px;height:28px;border-radius:50%;font-size:14px;">⚙</button>
+  </div>
+</div>
+
+<!-- 메인 패드 -->
+<div id="pad">
+  <!-- 왼쪽: 아날로그 조이스틱 -->
+  <div id="left-zone">
+    <div id="joystick-base">
+      <div class="dir-indicator up" id="dir-up">▲</div>
+      <div class="dir-indicator down" id="dir-down">▼</div>
+      <div class="dir-indicator left" id="dir-left">◀</div>
+      <div class="dir-indicator right" id="dir-right">▶</div>
+      <div id="joystick-thumb"></div>
+    </div>
+  </div>
+
+  <!-- 가운데: 트리거 + 특수 버튼 -->
+  <div id="center-zone">
+    <div class="trigger-row">
+      <div class="trigger-btn" data-key="KeyQ" id="btn-l1">L1</div>
+      <div class="trigger-btn" data-key="KeyE" id="btn-r1">R1</div>
+    </div>
+    <div class="trigger-row">
+      <div class="trigger-btn" data-key="ShiftLeft" id="btn-l2">L2</div>
+      <div class="trigger-btn" data-key="Space" id="btn-r2">R2</div>
+    </div>
+    <div class="special-row">
+      <div class="special-btn" data-key="Escape" id="btn-select">SEL</div>
+      <div class="special-btn" data-key="Enter" id="btn-start">STA</div>
+    </div>
+  </div>
+
+  <!-- 오른쪽: ABXY -->
+  <div id="right-zone">
+    <div class="action-btn btn-a" data-key="KeyJ" id="btn-a">A</div>
+    <div class="action-btn btn-b" data-key="KeyL" id="btn-b">B</div>
+    <div class="action-btn btn-x" data-key="KeyU" id="btn-x">X</div>
+    <div class="action-btn btn-y" data-key="KeyI" id="btn-y">Y</div>
+  </div>
+</div>
+
+<!-- D-Pad -->
+<div id="dpad-zone">
+  <div class="dpad-center"></div>
+  <div class="dpad-btn dpad-up" data-key="ArrowUp" id="dpad-up">▲</div>
+  <div class="dpad-btn dpad-down" data-key="ArrowDown" id="dpad-down">▼</div>
+  <div class="dpad-btn dpad-left" data-key="ArrowLeft" id="dpad-left">◀</div>
+  <div class="dpad-btn dpad-right" data-key="ArrowRight" id="dpad-right">▶</div>
+</div>
+
+<!-- 추가 버튼 -->
+<div id="extra-zone">
+  <div class="extra-btn" data-key="KeyR" id="btn-r3">R3</div>
+  <div class="extra-btn" data-key="KeyF" id="btn-l3">L3</div>
+</div>
+
+<!-- 키 로그 -->
+<div id="keylog">대기 중...</div>
+
+<!-- 진동 알림 -->
+<div class="vibrate-notice" id="vibrate-notice">진동 피드백 활성화</div>
+
+<!-- 설정 패널 -->
+<div id="settings-panel">
+  <h2>⚙ 게임패드 설정</h2>
+
+  <div class="setting-row">
+    <label>조이스틱 감도</label>
+    <input type="range" id="set-sens" min="0.3" max="1.5" step="0.1" value="1.0">
+    <span id="sens-val">1.0</span>
+  </div>
+
+  <div class="setting-row">
+    <label>진동 피드백</label>
+    <select id="set-vibrate">
+      <option value="on">켜기</option>
+      <option value="off">끄기</option>
+    </select>
+  </div>
+
+  <div class="setting-row">
+    <label>버튼 크기</label>
+    <select id="set-size">
+      <option value="small">작게</option>
+      <option value="medium" selected>보통</option>
+      <option value="large">크게</option>
+    </select>
+  </div>
+
+  <div class="setting-row">
+    <label>테마</label>
+    <select id="set-theme">
+      <option value="dark">다크</option>
+      <option value="blue">블루</option>
+      <option value="purple">퍼플</option>
+    </select>
+  </div>
+
+  <button class="close-settings" onclick="toggleSettings()">닫기</button>
+</div>
+
+<script>
+// ── 설정 ──
+var config = {
+  sensitivity: 1.0,
+  vibrate: true,
+  buttonScale: 1.0
+};
+
+// ── 키 로그 ──
+var keylog = document.getElementById('keylog');
+var logTimer = null;
+function showLog(msg) {
+  keylog.textContent = msg;
+  keylog.style.opacity = '1';
+  clearTimeout(logTimer);
+  logTimer = setTimeout(function() { keylog.style.opacity = '0.3'; }, 1500);
+}
+
+// ── 진동 피드백 ──
+function vibrate(ms) {
+  if (config.vibrate && navigator.vibrate) {
+    navigator.vibrate(ms || 15);
+  }
+}
+
+// ── 키보드 이벤트 시뮬레이션 ──
+function fireKey(code, type) {
+  var evType = type === 'down' ? 'keydown' : 'keyup';
+  var key = codeToKey(code);
+  var ev = new KeyboardEvent(evType, {
+    code: code,
+    key: key,
+    bubbles: true,
+    cancelable: true
+  });
+  document.dispatchEvent(ev);
+  if (type === 'down') showLog(key + ' (' + code + ') DOWN');
+}
+
+function codeToKey(code) {
+  var map = {
+    'ArrowUp':'ArrowUp','ArrowDown':'ArrowDown','ArrowLeft':'ArrowLeft','ArrowRight':'ArrowRight',
+    'KeyW':'w','KeyA':'a','KeyS':'s','KeyD':'d',
+    'KeyJ':'j','KeyK':'k','KeyL':'l','KeyI':'i','KeyU':'u',
+    'KeyQ':'q','KeyE':'e','KeyR':'r','KeyF':'f',
+    'Space':' ','Enter':'Enter','Escape':'Escape','ShiftLeft':'Shift'
+  };
+  return map[code] || code;
+}
+
+// ── 버튼 터치 처리 ──
+var activeTouches = {};
+
+function setupButton(el) {
+  if (!el || !el.dataset.key) return;
+
+  el.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    el.classList.add('active');
+    vibrate(15);
+    fireKey(el.dataset.key, 'down');
+    for (var i = 0; i < e.changedTouches.length; i++) {
+      activeTouches[e.changedTouches[i].identifier] = el;
+    }
+  }, { passive: false });
+
+  el.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    el.classList.remove('active');
+    fireKey(el.dataset.key, 'up');
+    for (var i = 0; i < e.changedTouches.length; i++) {
+      delete activeTouches[e.changedTouches[i].identifier];
+    }
+  }, { passive: false });
+
+  el.addEventListener('touchcancel', function(e) {
+    el.classList.remove('active');
+    fireKey(el.dataset.key, 'up');
+  });
+}
+
+// 모든 버튼 초기화
+var allButtons = document.querySelectorAll('.action-btn, .trigger-btn, .special-btn, .dpad-btn, .extra-btn');
+for (var i = 0; i < allButtons.length; i++) {
+  setupButton(allButtons[i]);
+}
+
+// ── 조이스틱 ──
+var joyBase = document.getElementById('joystick-base');
+var joyThumb = document.getElementById('joystick-thumb');
+var joyActive = false;
+var joyTouchId = null;
+var joyCenter = { x: 0, y: 0 };
+var joyRadius = 65;
+var currentJoyKeys = { up: false, down: false, left: false, right: false };
+var joyKeyMap = { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD' };
+
+function getJoyCenter() {
+  var rect = joyBase.getBoundingClientRect();
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+}
+
+joyBase.addEventListener('touchstart', function(e) {
+  e.preventDefault();
+  if (joyActive) return;
+  var t = e.changedTouches[0];
+  joyActive = true;
+  joyTouchId = t.identifier;
+  joyCenter = getJoyCenter();
+  joyThumb.classList.add('active');
+  vibrate(10);
+  updateJoystick(t.clientX, t.clientY);
+}, { passive: false });
+
+document.addEventListener('touchmove', function(e) {
+  if (!joyActive) return;
+  for (var i = 0; i < e.changedTouches.length; i++) {
+    if (e.changedTouches[i].identifier === joyTouchId) {
+      e.preventDefault();
+      updateJoystick(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+      break;
+    }
+  }
+}, { passive: false });
+
+document.addEventListener('touchend', function(e) {
+  if (!joyActive) return;
+  for (var i = 0; i < e.changedTouches.length; i++) {
+    if (e.changedTouches[i].identifier === joyTouchId) {
+      resetJoystick();
+      break;
+    }
+  }
+});
+document.addEventListener('touchcancel', function() { if (joyActive) resetJoystick(); });
+
+function updateJoystick(tx, ty) {
+  var dx = (tx - joyCenter.x) * config.sensitivity;
+  var dy = (ty - joyCenter.y) * config.sensitivity;
+  var dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist > joyRadius) {
+    dx = dx / dist * joyRadius;
+    dy = dy / dist * joyRadius;
+  }
+
+  joyThumb.style.left = 'calc(50% + ' + dx + 'px)';
+  joyThumb.style.top = 'calc(50% + ' + dy + 'px)';
+
+  // 방향 판정 (데드존 20%)
+  var deadzone = joyRadius * 0.2;
+  var newKeys = {
+    up: dy < -deadzone,
+    down: dy > deadzone,
+    left: dx < -deadzone,
+    right: dx > deadzone
+  };
+
+  // 방향 표시 업데이트
+  document.getElementById('dir-up').classList.toggle('active', newKeys.up);
+  document.getElementById('dir-down').classList.toggle('active', newKeys.down);
+  document.getElementById('dir-left').classList.toggle('active', newKeys.left);
+  document.getElementById('dir-right').classList.toggle('active', newKeys.right);
+
+  // 키 이벤트 발생
+  for (var dir in newKeys) {
+    if (newKeys[dir] && !currentJoyKeys[dir]) {
+      fireKey(joyKeyMap[dir], 'down');
+      vibrate(8);
+    } else if (!newKeys[dir] && currentJoyKeys[dir]) {
+      fireKey(joyKeyMap[dir], 'up');
+    }
+  }
+  currentJoyKeys = newKeys;
+}
+
+function resetJoystick() {
+  joyActive = false;
+  joyTouchId = null;
+  joyThumb.classList.remove('active');
+  joyThumb.style.left = '50%';
+  joyThumb.style.top = '50%';
+
+  for (var dir in currentJoyKeys) {
+    if (currentJoyKeys[dir]) {
+      fireKey(joyKeyMap[dir], 'up');
+    }
+    document.getElementById('dir-' + dir).classList.remove('active');
+  }
+  currentJoyKeys = { up: false, down: false, left: false, right: false };
+}
+
+// ── 설정 패널 ──
+function toggleSettings() {
+  document.getElementById('settings-panel').classList.toggle('open');
+}
+
+document.getElementById('set-sens').addEventListener('input', function() {
+  config.sensitivity = parseFloat(this.value);
+  document.getElementById('sens-val').textContent = config.sensitivity.toFixed(1);
+});
+
+document.getElementById('set-vibrate').addEventListener('change', function() {
+  config.vibrate = this.value === 'on';
+  if (config.vibrate) {
+    vibrate(30);
+    var notice = document.getElementById('vibrate-notice');
+    notice.classList.add('show');
+    setTimeout(function() { notice.classList.remove('show'); }, 2000);
+  }
+});
+
+document.getElementById('set-size').addEventListener('change', function() {
+  var scale = { small: 0.8, medium: 1.0, large: 1.2 }[this.value] || 1.0;
+  config.buttonScale = scale;
+  document.getElementById('right-zone').style.transform = 'scale(' + scale + ')';
+  document.getElementById('left-zone').style.transform = 'scale(' + scale + ')';
+  document.getElementById('dpad-zone').style.transform = 'scale(' + scale + ')';
+});
+
+document.getElementById('set-theme').addEventListener('change', function() {
+  var themes = {
+    dark: 'linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #16213e 100%)',
+    blue: 'linear-gradient(135deg, #0a1628 0%, #0d2847 50%, #0a2a4a 100%)',
+    purple: 'linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 50%, #1a1040 100%)'
+  };
+  document.getElementById('pad').style.background = themes[this.value] || themes.dark;
+});
+
+// ── 전체 화면 모드 ──
+document.addEventListener('dblclick', function() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(function() {});
+  } else {
+    document.exitFullscreen();
+  }
+});
+
+// ── 기본 동작 방지 ──
+document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+document.body.addEventListener('touchstart', function(e) {
+  if (e.target === document.body || e.target === document.getElementById('pad')) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+showLog('게임패드 준비 완료! 터치하세요');
+</script>
+</body>
+</html>
