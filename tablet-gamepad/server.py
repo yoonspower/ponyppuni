@@ -12,6 +12,7 @@ import socket
 import threading
 import json
 import sys
+import os
 
 try:
     from pynput.keyboard import Controller, Key
@@ -53,6 +54,7 @@ active_client_lock = threading.Lock()
 active_client = None
 
 PORT = 9877
+VERBOSE = os.environ.get('GAMEPAD_VERBOSE', '').lower() in ('1', 'true', 'yes')
 
 
 def get_local_ip():
@@ -80,6 +82,8 @@ def press_key(key_name):
     try:
         keyboard.press(key)
     except Exception as e:
+        with pressed_keys_lock:
+            pressed_keys.discard(key_name)
         print(f"  키 입력 오류: {e}")
 
 
@@ -95,6 +99,8 @@ def release_key(key_name):
     try:
         keyboard.release(key)
     except Exception as e:
+        with pressed_keys_lock:
+            pressed_keys.add(key_name)
         print(f"  키 해제 오류: {e}")
 
 
@@ -140,21 +146,22 @@ def handle_client(conn, addr):
 
                     if action == 'press':
                         press_key(key)
-                        print(f"  [PRESS] {key}")
+                        if VERBOSE:
+                            print(f"  [PRESS] {key}")
                     elif action == 'release':
                         release_key(key)
-                        print(f"  [RELEASE] {key}")
+                        if VERBOSE:
+                            print(f"  [RELEASE] {key}")
                     elif action == 'ping':
                         conn.sendall(b'{"status":"ok"}\n')
                 except json.JSONDecodeError:
                     pass
-    except (ConnectionResetError, BrokenPipeError):
+    except (ConnectionResetError, BrokenPipeError, OSError, UnicodeDecodeError):
         pass
     finally:
         release_all()
         conn.close()
         with active_client_lock:
-            global active_client
             active_client = None
         print(f"  태블릿 연결 해제: {addr[0]}")
 

@@ -41,36 +41,129 @@ class NetworkClient:
         self.sock = None
         self.connected = False
         self.lock = threading.Lock()
+        self._send_queue = []
+        self._send_lock = threading.Lock()
+        self._send_thread = None
+        self._heartbeat_thread = None
+        self._stop_event = threading.Event()
+        self._connecting = False
+        self._connect_result = None  # None=진행중, True=성공, False=실패
 
-    def connect(self, ip):
+    def connect_async(self, ip):
+        """별도 스레드에서 연결 시도 (UI 프리징 방지)"""
+        self._connecting = True
+        self._connect_result = None
+        t = threading.Thread(target=self._do_connect, args=(ip,), daemon=True)
+        t.start()
+
+    def _do_connect(self, ip):
+        # 이전 소켓 정리 (#12)
+        self._cleanup_socket()
         try:
-            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.sock.settimeout(3)
-            self.sock.connect((ip, PORT))
-            self.sock.settimeout(5)
-            self.connected = True
-            return True
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(3)
+            s.connect((ip, PORT))
+            s.settimeout(None)  # send에서 타임아웃 문제 방지 (#3)
+            with self.lock:
+                self.sock = s
+                self.connected = True
+            self._stop_event.clear()
+            self._start_send_thread()
+            self._start_heartbeat_thread()
+            self._connect_result = True
         except Exception as e:
             print(f"연결 실패: {e}")
+            try:
+                s.close()
+            except Exception:
+                pass
             self.connected = False
-            return False
+            self._connect_result = False
+        finally:
+            self._connecting = False
+
+    def _start_send_thread(self):
+        """비동기 send 처리 스레드 (#3)"""
+        self._send_thread = threading.Thread(target=self._send_loop, daemon=True)
+        self._send_thread.start()
+
+    def _send_loop(self):
+        while not self._stop_event.is_set():
+            items = []
+            with self._send_lock:
+                if self._send_queue:
+                    items = self._send_queue[:]
+                    self._send_queue.clear()
+            if items:
+                with self.lock:
+                    if self.sock and self.connected:
+                        try:
+                            data = ''.join(items).encode('utf-8')
+                            self.sock.sendall(data)
+                        except Exception:
+                            self.connected = False
+                            return
+            else:
+                time.sleep(0.005)
+
+    def _start_heartbeat_thread(self):
+        """주기적 서버 상태 체크 (#2)"""
+        self._heartbeat_thread = threading.Thread(target=self._heartbeat_loop, daemon=True)
+        self._heartbeat_thread.start()
+
+    def _heartbeat_loop(self):
+        while not self._stop_event.is_set() and self.connected:
+            try:
+                msg = json.dumps({"action": "ping", "key": ""}) + "\n"
+                sock_ref = None
+                with self.lock:
+                    if self.sock and self.connected:
+                        self.sock.sendall(msg.encode('utf-8'))
+                        sock_ref = self.sock
+                # recv 밖에서 처리 - lock 점유 시간 최소화
+                if sock_ref:
+                    try:
+                        sock_ref.settimeout(3)
+                        resp = sock_ref.recv(1024)
+                        if not resp:
+                            self.connected = False
+                            return
+                    except socket.timeout:
+                        pass  # 타임아웃은 OK, 서버가 응답 안 할 수도
+                    finally:
+                        try:
+                            sock_ref.settimeout(None)
+                        except OSError:
+                            pass
+            except Exception:
+                self.connected = False
+                return
+            # 2초 간격 heartbeat (중간에 stop 체크)
+            for _ in range(20):
+                if self._stop_event.is_set() or not self.connected:
+                    return
+                time.sleep(0.1)
 
     def send(self, action, key):
         if not self.connected:
             return
         msg = json.dumps({"action": action, "key": key}) + "\n"
+        with self._send_lock:
+            self._send_queue.append(msg)
+
+    def _cleanup_socket(self):
+        """소켓 정리"""
         with self.lock:
-            try:
-                self.sock.sendall(msg.encode('utf-8'))
-            except Exception:
-                self.connected = False
+            if self.sock:
+                try:
+                    self.sock.close()
+                except Exception:
+                    pass
+                self.sock = None
 
     def close(self):
-        if self.sock:
-            try:
-                self.sock.close()
-            except Exception:
-                pass
+        self._stop_event.set()
+        self._cleanup_socket()
         self.connected = False
 
 
@@ -223,6 +316,9 @@ class Joystick:
             'right': dx > deadzone,
         }
 
+        if not net.connected:
+            return
+
         for d in new_keys:
             if new_keys[d] and not self.keys[d]:
                 net.send('press', self.key_map[d])
@@ -340,6 +436,16 @@ class GamePad:
 
     # ── 연결 화면 ──
     def _connect_screen(self):
+        # 비동기 연결 결과 체크 (#6)
+        if self.net._connect_result is True:
+            self.net._connect_result = None
+            self.state = 'pad'
+            self.connect_msg = ''
+            return
+        elif self.net._connect_result is False:
+            self.net._connect_result = None
+            self.connect_msg = "Connection failed. Check IP and server."
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
@@ -437,14 +543,19 @@ class GamePad:
         if not ip:
             self.connect_msg = "IP address required"
             return
+        # IP 유효성 검증 (#10)
+        parts = ip.split('.')
+        if len(parts) != 4:
+            self.connect_msg = "Invalid IP format (e.g. 192.168.0.1)"
+            return
+        for p in parts:
+            if not p.isdigit() or not (0 <= int(p) <= 255):
+                self.connect_msg = "Invalid IP format (e.g. 192.168.0.1)"
+                return
+        if self.net._connecting:
+            return
         self.connect_msg = "Connecting..."
-        pygame.display.flip()
-
-        if self.net.connect(ip):
-            self.state = 'pad'
-            self.connect_msg = ''
-        else:
-            self.connect_msg = "Connection failed. Check IP and server."
+        self.net.connect_async(ip)  # 비동기 연결 (#6)
 
     # ── 게임패드 화면 ──
     def _pad_screen(self):
@@ -454,6 +565,7 @@ class GamePad:
                 return
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    self._reset_all_controls()
                     self.net.close()
                     self.state = 'connect'
                     self.connect_msg = ''
@@ -475,11 +587,14 @@ class GamePad:
                 if self.pad_visible:
                     self._on_touch_move(event)
             elif event.type == pygame.FINGERUP:
-                if self.pad_visible:
-                    self._on_touch_up(event)
+                self._on_touch_up(event)  # 패드 숨겨도 항상 처리 (#4)
+            elif event.type == pygame.WINDOWLEAVE:
+                # 화면 밖 드래그 시 안전장치 (#4)
+                self._release_all_touches()
 
         # 연결 확인
         if not self.net.connected:
+            self._reset_all_controls()  # (#7) 상태 초기화
             self.state = 'connect'
             self.connect_msg = "Connection lost"
             return
@@ -508,7 +623,7 @@ class GamePad:
         """패드 ON/OFF 토글 버튼 (항상 표시, 우측 상단)"""
         tw, th = 50, 34
         margin = 10
-        self._toggle_rect = pygame.Rect(self.W // 2 - tw // 2, self.H - th - margin, tw, th)
+        self._toggle_rect = pygame.Rect(self.W - tw - margin, margin, tw, th)
 
         surf = pygame.Surface((tw, th), pygame.SRCALPHA)
         if self.pad_visible:
@@ -537,6 +652,30 @@ class GamePad:
                     btn.touch_id = None
                     self.net.send('release', btn.key)
             self.touch_map.clear()
+
+    def _release_all_touches(self):
+        """모든 활성 터치 해제 - FINGERUP 누락 안전장치 (#4)"""
+        for tid in list(self.touch_map.keys()):
+            obj = self.touch_map.pop(tid, None)
+            if obj is self.joystick:
+                self.joystick.reset(self.net)
+            elif isinstance(obj, (Button, CircleButton)):
+                if obj.pressed:
+                    obj.pressed = False
+                    obj.touch_id = None
+                    self.net.send('release', obj.key)
+
+    def _reset_all_controls(self):
+        """모든 버튼/조이스틱 상태 초기화 (#7)"""
+        self.joystick.thumb_x = self.joystick.cx
+        self.joystick.thumb_y = self.joystick.cy
+        self.joystick.active = False
+        self.joystick.touch_id = None
+        self.joystick.keys = {'up': False, 'down': False, 'left': False, 'right': False}
+        for btn in self.buttons:
+            btn.pressed = False
+            btn.touch_id = None
+        self.touch_map.clear()
 
     def _get_touch_pos(self, event):
         return (int(event.x * self.W), int(event.y * self.H))
