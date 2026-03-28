@@ -262,6 +262,7 @@ class GamePad:
         self.pad_alpha = 50  # 기본 투명도 (0~255)
         self.running = True
         self.state = 'connect'  # 'connect' or 'pad'
+        self.pad_visible = True  # 패드 표시/숨김 토글
         self.ip_text = ''
         self.connect_msg = ''
         self.touch_map = {}  # touch_id -> button/joystick
@@ -453,11 +454,18 @@ class GamePad:
                     self.connect_msg = ''
                     return
             elif event.type == pygame.FINGERDOWN:
-                self._on_touch_down(event)
+                pos = self._get_touch_pos(event)
+                # 토글 버튼 체크 (항상 우선)
+                if self._toggle_rect.collidepoint(pos):
+                    self._toggle_pad()
+                elif self.pad_visible:
+                    self._on_touch_down(event)
             elif event.type == pygame.FINGERMOTION:
-                self._on_touch_move(event)
+                if self.pad_visible:
+                    self._on_touch_move(event)
             elif event.type == pygame.FINGERUP:
-                self._on_touch_up(event)
+                if self.pad_visible:
+                    self._on_touch_up(event)
 
         # 연결 확인
         if not self.net.connected:
@@ -468,22 +476,60 @@ class GamePad:
         # 그리기
         self.screen.fill((0, 0, 0))
 
-        # 조이스틱
-        self.joystick.draw(self.screen, self.pad_alpha)
+        if self.pad_visible:
+            # 조이스틱
+            self.joystick.draw(self.screen, self.pad_alpha)
 
-        # 버튼
-        for btn in self.buttons:
-            btn.draw(self.screen, self.font, self.pad_alpha)
+            # 버튼
+            for btn in self.buttons:
+                btn.draw(self.screen, self.font, self.pad_alpha)
 
-        # 상태 표시
-        status = self.font_sm.render("Connected | ESC = back", True, (*WHITE, 60))
-        self.screen.blit(status, (self.W // 2 - status.get_width() // 2, self.H - 20))
+            # 상태 표시
+            status = self.font_sm.render("Connected | ESC = back", True, (*WHITE, 60))
+            self.screen.blit(status, (self.W // 2 - status.get_width() // 2, self.H - 20))
 
-        # 투명도 표시
-        op_text = self.font_sm.render(f"Opacity: {self.pad_alpha}", True, (*WHITE, 60))
-        self.screen.blit(op_text, (self.W - 120, self.H - 20))
+            # 투명도 표시
+            op_text = self.font_sm.render(f"Opacity: {self.pad_alpha}", True, (*WHITE, 60))
+            self.screen.blit(op_text, (self.W - 120, self.H - 20))
+
+        # 토글 버튼 (패드 숨겨도 항상 표시)
+        self._draw_toggle_btn()
 
         pygame.display.flip()
+
+    def _draw_toggle_btn(self):
+        """패드 ON/OFF 토글 버튼 (항상 표시)"""
+        tw, th = 50, 50
+        margin = 10
+        self._toggle_rect = pygame.Rect(self.W - tw - margin, self.H // 2 - th // 2, tw, th)
+
+        surf = pygame.Surface((tw, th), pygame.SRCALPHA)
+        if self.pad_visible:
+            pygame.draw.rect(surf, (30, 120, 30, 160), (0, 0, tw, th), border_radius=12)
+            pygame.draw.rect(surf, (80, 200, 80, 120), (0, 0, tw, th), width=2, border_radius=12)
+        else:
+            pygame.draw.rect(surf, (120, 30, 30, 160), (0, 0, tw, th), border_radius=12)
+            pygame.draw.rect(surf, (200, 80, 80, 120), (0, 0, tw, th), width=2, border_radius=12)
+        self.screen.blit(surf, self._toggle_rect.topleft)
+
+        label = "ON" if self.pad_visible else "OFF"
+        txt = self.font_sm.render(label, True, WHITE)
+        self.screen.blit(txt, txt.get_rect(center=self._toggle_rect.center))
+
+    def _toggle_pad(self):
+        """패드 표시/숨김 전환, 숨길 때 눌린 키 모두 해제"""
+        self.pad_visible = not self.pad_visible
+        if not self.pad_visible:
+            # 조이스틱 리셋
+            if self.joystick.active:
+                self.joystick.reset(self.net)
+            # 눌린 버튼 모두 해제
+            for btn in self.buttons:
+                if btn.pressed:
+                    btn.pressed = False
+                    btn.touch_id = None
+                    self.net.send('release', btn.key)
+            self.touch_map.clear()
 
     def _get_touch_pos(self, event):
         return (int(event.x * self.W), int(event.y * self.H))
