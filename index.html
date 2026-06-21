@@ -296,7 +296,7 @@ if (isSamsung) {
   } else if (keys && keys.length > 1) {
     // 화면이 같은 기종이 여럿 → 힌트 보고 원탭 확정
     out.innerHTML = makeResult('apple-bg', '아이폰', '아래에서 내 기종을 골라주세요 👇', iosStr, screenStr)
-      + pickerHtml('🤔 화면이 같은 기종이 여럿 있어요', '카메라·크기 힌트를 보고 한 번만 탭하세요 😊', keys);
+      + pickerHtml('🤔 화면이 같은 기종이 여럿 있어요', '아래 힌트를 보고 내 기종을 한 번만 탭하세요 😊', keys);
   } else {
     // 해상도 매칭 실패(디스플레이 확대/축소 등) → 직접 선택
     out.innerHTML = makeResult('apple-bg', '아이폰', '아래에서 내 기종을 직접 골라주세요 👇', iosStr, screenStr)
@@ -328,23 +328,46 @@ if (isSamsung) {
 
 // ── 아이폰 선택 UI 헬퍼 (모든 브라우저 호환: ES5, 인라인 onclick) ──
 function lensTxt(l){ return l >= 3 ? '카메라 3개' : (l === 2 ? '카메라 2개' : '카메라 1개'); }
+function inchTxt(s){ return String(s).replace('"', '인치'); }
+function hintLine(k){ var m = M[k]; return m ? (lensTxt(m.l) + ' · ' + inchTxt(m.s) + ' · ' + m.y + '년') : ''; }
 
-function hintLine(k){ var m = M[k]; return m ? (m.y + '년 · ' + m.s + ' · ' + lensTxt(m.l)) : ''; }
+// 후보군에서 특정 속성(prop)이 몇 가지 값으로 갈리는지 센다
+function distinctCount(keys, prop){
+  var seen = {}, n = 0;
+  for (var i = 0; i < keys.length; i++){
+    var m = M[keys[i]]; if (!m) continue;
+    var v = '' + m[prop];
+    if (!seen[v]) { seen[v] = 1; n++; }
+  }
+  return n;
+}
+
+// 후보들 사이에서 "실제로 갈리는" 속성만 골라 힌트로 만든다.
+// 예) 16 Plus vs 15 Plus 는 카메라·크기 같고 연도만 다름 → "2024년" / "2023년"만 표기
+function buildHint(keys, k){
+  var m = M[k]; if (!m) return '';
+  var parts = [];
+  if (distinctCount(keys, 'l') > 1) parts.push(lensTxt(m.l)); // 카메라 개수가 갈릴 때만
+  if (distinctCount(keys, 's') > 1) parts.push(inchTxt(m.s)); // 화면 크기가 갈릴 때만
+  if (distinctCount(keys, 'y') > 1) parts.push(m.y + '년');   // 출시연도가 갈릴 때만
+  if (!parts.length) parts.push(m.y + '년');                  // 만약 다 같으면 연도라도 표기
+  return parts.join(' · ');
+}
 
 function escq(s){ return String(s).replace(/'/g, "\\'"); }
 
-function pickBtn(k){
+function pickBtn(k, keys){
   var m = M[k];
   if (!m) return '';
   return '<button type="button" class="pick-btn" onclick="sel(this,\'' + escq(m.n) + '\')">'
     + '<span class="pn">' + m.n + '</span>'
-    + '<span class="ph">' + m.y + '년 · ' + m.s + ' · ' + lensTxt(m.l) + '</span>'
+    + '<span class="ph">' + buildHint(keys, k) + '</span>'
     + '</button>';
 }
 
 function pickerHtml(title, sub, keys){
   var h = '<div class="pick-title">' + title + '</div><div class="pick-sub">' + sub + '</div>';
-  for (var i = 0; i < keys.length; i++) h += pickBtn(keys[i]);
+  for (var i = 0; i < keys.length; i++) h += pickBtn(keys[i], keys);
   return h;
 }
 
