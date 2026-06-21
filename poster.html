@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>포니쁘니 - QR 포스터 (A4 인쇄용)</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css">
+<style>
+  /* ===== A4 인쇄 설정 ===== */
+  @page { size: A4 portrait; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  :root{ --blue:#3366FF; --blue-tint:#EAF0FF; --text:#21272A; --sub:#868E96; --border:#E9ECEF; }
+
+  html, body { width: 210mm; height: 297mm; }
+  /* 원티드 스타일: 흰 배경 + 비비드 블루 포인트 */
+  body {
+    font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif;
+    background: #FFFFFF; color: var(--text);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 20mm 18mm 16mm;
+  }
+
+  /* ===== 브랜드 ===== */
+  .brand { display: flex; align-items: center; gap: 4mm; margin-bottom: 12mm; }
+  .brand .name { font-size: 9mm; font-weight: 800; letter-spacing: -0.5mm; }
+  .brand .tag {
+    font-size: 4.6mm; font-weight: 700; color: var(--blue);
+    background: var(--blue-tint); border-radius: 999px; padding: 1.8mm 4mm;
+  }
+
+  /* ===== 헤드라인 ===== */
+  .hero { text-align: center; margin-bottom: 11mm; }
+  .hero h1 { font-size: 15mm; font-weight: 800; line-height: 1.3; letter-spacing: -0.6mm; }
+  .hero h1 b { color: var(--blue); }
+  .hero p { font-size: 6mm; font-weight: 600; color: var(--sub); margin-top: 5mm; }
+
+  /* ===== QR 카드 ===== */
+  .qr-card {
+    background: #fff; border: 0.5mm solid var(--border); border-radius: 8mm;
+    padding: 11mm 11mm 9mm; text-align: center;
+    box-shadow: 0 3mm 14mm rgba(33,39,42,.08);
+  }
+  .qr-card img { width: 108mm; height: 108mm; display: block; margin: 0 auto; }
+  .qr-cap {
+    margin-top: 6mm; font-size: 7mm; font-weight: 800; color: #fff;
+    background: var(--blue); border-radius: 999px; padding: 3.5mm 0; letter-spacing: -0.3mm;
+  }
+
+  /* ===== 사용법 ===== */
+  .steps { width: 100%; max-width: 150mm; margin-top: 11mm; }
+  .step { display: flex; align-items: center; gap: 5mm; padding: 4mm 0; }
+  .step + .step { border-top: 0.4mm solid #F1F3F5; }
+  .step .num {
+    flex: none; width: 11mm; height: 11mm; line-height: 11mm; text-align: center;
+    border-radius: 50%; background: var(--blue); color: #fff; font-size: 6mm; font-weight: 800;
+  }
+  .step .txt { font-size: 6mm; font-weight: 700; }
+
+  /* ===== 하단 ===== */
+  .foot { margin-top: auto; padding-top: 10mm; text-align: center; }
+  .foot .pill {
+    display: inline-block; background: var(--blue-tint); color: var(--blue);
+    font-size: 5.5mm; font-weight: 800; padding: 3.5mm 10mm; border-radius: 999px;
+  }
+  .foot .sub { margin-top: 4mm; font-size: 4mm; color: var(--sub); font-weight: 500; }
+
+  @media screen { body { box-shadow: 0 0 30px rgba(0,0,0,.15); margin: 20px auto; } }
+</style>
+</head>
+<body>
+  <div class="brand">
+    <span class="name">포니쁘니</span>
+    <span class="tag">핸드폰 기종 확인</span>
+  </div>
+
+  <div class="hero">
+    <h1>내 폰 기종이 <b>뭐였더라?</b><br>QR 찍으면 <b>바로 확인!</b></h1>
+    <p>삼성 갤럭시 · 아이폰 자동 인식</p>
+  </div>
+
+  <div class="qr-card">
+    <img src="data:image/png;base64,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" alt="QR 코드">
+    <div class="qr-cap">📷 여기를 휴대폰으로 찍어주세요</div>
+  </div>
+
+  <div class="steps">
+    <div class="step"><span class="num">1</span><span class="txt">휴대폰 카메라를 켜주세요</span></div>
+    <div class="step"><span class="num">2</span><span class="txt">위 QR 코드를 비춰주세요</span></div>
+    <div class="step"><span class="num">3</span><span class="txt">화면에 뜨는 링크를 눌러주세요</span></div>
+  </div>
+
+  <div class="foot">
+    <span class="pill">무료 · 개인정보 수집 안 함</span>
+    <div class="sub">삼성 갤럭시 / 아이폰 기종을 자동으로 알려드려요</div>
+  </div>
+</body>
+</html>

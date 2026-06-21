@@ -4,44 +4,62 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>포니쁘니 - 핸드폰 기종 확인</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@latest/dist/web/static/pretendard.css">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:linear-gradient(160deg,#1a1a6e,#c850c0);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,'Malgun Gothic',sans-serif;padding:20px}
-.top{text-align:center;margin-bottom:16px}
-.shop-name{font-size:32px;font-weight:900;color:#fff;letter-spacing:2px}
-.shop-sub{font-size:14px;color:rgba(255,255,255,.8);margin-top:4px}
-.card{background:#fff;border-radius:28px;padding:32px 24px 28px;width:100%;max-width:400px;box-shadow:0 30px 60px rgba(0,0,0,.3)}
-.card-top{text-align:center;margin-bottom:22px}
-.card-top .icon{font-size:52px;margin-bottom:8px}
-.card-top h1{font-size:20px;font-weight:800;color:#2d2d2d;margin-bottom:3px}
-.card-top p{font-size:13px;color:#bbb}
-.result-card{border-radius:20px;padding:22px 20px;margin-bottom:16px;color:#fff}
-.samsung-bg{background:linear-gradient(135deg,#1428A0,#0B52CE)}
-.apple-bg{background:linear-gradient(135deg,#1c1c1e,#48484a)}
-.rl{font-size:12px;opacity:.7;margin-bottom:8px}
-.rm{font-size:28px;font-weight:900;line-height:1.2;word-break:keep-all}
-.rs{font-size:12px;opacity:.55;margin-top:6px}
-.info-box{background:#f8f6ff;border-radius:16px;overflow:hidden;margin-bottom:16px}
-.info-row{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid #ede9fe;font-size:14px}
+/* ===== 원티드(Wanted) 스타일: 흰 배경 · 비비드 블루 · Pretendard ===== */
+:root{
+  --blue:#3366FF; --blue-dark:#2A52E0; --blue-tint:#EAF0FF;
+  --bg:#F4F5F7; --card:#FFFFFF; --text:#21272A; --sub:#868E96; --border:#E9ECEF;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-family:'Pretendard',-apple-system,'Malgun Gothic',sans-serif;color:var(--text);padding:24px 18px}
+.top{text-align:center;margin-bottom:18px}
+.shop-name{font-size:24px;font-weight:800;color:var(--text);letter-spacing:-0.6px}
+.shop-sub{font-size:14px;color:var(--sub);margin-top:6px;font-weight:500}
+.card{background:var(--card);border-radius:20px;padding:28px 22px 24px;width:100%;max-width:400px;
+  box-shadow:0 4px 24px rgba(33,39,42,.07);border:1px solid #EEF0F3}
+.card-top{text-align:center;margin-bottom:20px}
+.card-top .icon{display:inline-flex;align-items:center;justify-content:center;width:62px;height:62px;
+  background:var(--blue-tint);border-radius:18px;font-size:30px;margin-bottom:12px}
+.card-top h1{font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.5px;margin-bottom:4px}
+.card-top p{font-size:14px;color:var(--sub);font-weight:500}
+/* 결과 카드: 원티드 톤의 연한 틴트 + 진한 텍스트 */
+.result-card{border-radius:16px;padding:22px 20px;margin-bottom:14px}
+.samsung-bg{background:var(--blue-tint)}
+.apple-bg{background:#F1F3F5}
+.rl{font-size:12px;font-weight:700;color:var(--blue);letter-spacing:.2px;margin-bottom:8px}
+.apple-bg .rl{color:#495057}
+.rm{font-size:26px;font-weight:800;color:var(--text);line-height:1.25;letter-spacing:-0.5px;word-break:keep-all}
+.rs{font-size:13px;color:var(--sub);margin-top:8px;font-weight:500}
+.info-box{background:#F8F9FA;border:1px solid #F1F3F5;border-radius:14px;overflow:hidden;margin-bottom:14px}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #F1F3F5;font-size:14px}
 .info-row:last-child{border-bottom:none}
-.ik{color:#888}.iv{color:#111;font-weight:700}
-.pick-title{font-size:15px;font-weight:700;color:#333;text-align:center;margin-bottom:6px}
-.pick-sub{font-size:13px;color:#999;text-align:center;margin-bottom:14px;line-height:1.5}
-.pick-btn{display:block;width:100%;background:#f8f6ff;border:2px solid #e0d9ff;border-radius:14px;padding:15px;margin-bottom:10px;font-size:17px;font-weight:700;color:#4158d0;cursor:pointer}
-.warn-box{background:#fff8e1;border:2px solid #ffc107;border-radius:16px;padding:24px;text-align:center;margin-bottom:16px}
-.wi{font-size:44px;margin-bottom:10px}
-.wt{font-size:17px;font-weight:800;color:#856404;margin-bottom:6px}
-.wd{font-size:14px;color:#6c5a00;line-height:1.6}
-.open-btn{display:block;width:100%;background:linear-gradient(135deg,#1428A0,#0B52CE);border:none;border-radius:14px;padding:16px;margin-top:14px;font-size:17px;font-weight:700;color:#fff;cursor:pointer}
+.ik{color:var(--sub);font-weight:500}.iv{color:var(--text);font-weight:700}
+.pick-title{font-size:15px;font-weight:700;color:var(--text);text-align:center;margin:6px 0 6px}
+.pick-sub{font-size:13px;color:var(--sub);text-align:center;margin-bottom:14px;line-height:1.5}
+.pick-btn{display:block;width:100%;background:#fff;border:1.5px solid var(--border);border-radius:14px;
+  padding:14px 16px;margin-bottom:10px;text-align:left;cursor:pointer;transition:border-color .15s,background .15s}
+.pick-btn .pn{display:block;font-size:16px;font-weight:700;color:var(--text)}
+.pick-btn .ph{display:block;font-size:12.5px;font-weight:500;color:var(--sub);margin-top:3px}
+.pick-btn:active,.pick-btn:hover{border-color:var(--blue);background:#F5F8FF}
+.warn-box{background:#F8F9FA;border:1px solid var(--border);border-radius:16px;padding:28px 20px;text-align:center}
+.wi{font-size:40px;margin-bottom:12px}
+.wt{font-size:17px;font-weight:800;color:var(--text);letter-spacing:-0.5px;margin-bottom:8px}
+.wd{font-size:14px;color:var(--sub);line-height:1.6}
+.open-btn{display:block;width:100%;background:var(--blue);border:none;border-radius:12px;padding:15px;margin-top:16px;
+  font-size:16px;font-weight:700;color:#fff;cursor:pointer}
+.open-btn:active{background:var(--blue-dark)}
 .footer{text-align:center;margin-top:18px}
-.badge{display:inline-block;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);border-radius:20px;padding:8px 20px;color:#fff;font-size:14px;font-weight:700}
-.notice{font-size:11px;color:rgba(255,255,255,.6);margin-top:10px;text-align:center}
+.badge{display:inline-block;background:#fff;border:1px solid var(--border);border-radius:999px;padding:8px 18px;
+  color:#495057;font-size:13px;font-weight:600}
+.notice{font-size:12px;color:#ADB5BD;margin-top:10px}
 </style>
 </head>
 <body>
 <div class="top">
   <div class="shop-name">포니쁘니</div>
-  <div class="shop-sub">📱 핸드폰 기종 확인 서비스</div>
+  <div class="shop-sub">핸드폰 기종 확인 서비스</div>
 </div>
 <div class="card">
   <div class="card-top">
@@ -52,8 +70,7 @@ body{background:linear-gradient(160deg,#1a1a6e,#c850c0);min-height:100vh;display
   <div id="result"></div>
 </div>
 <div class="footer">
-  <div class="badge">📱 포니쁘니</div>
-  <div class="notice">🔒 개인정보는 수집·저장되지 않습니다</div>
+  <div class="badge">🔒 개인정보 수집·저장 안 함</div>
 </div>
 <script>
 var ua = navigator.userAgent;
@@ -161,45 +178,71 @@ var SM = {
   "SM-A716S":"갤럭시 퀀텀","SM-A826S":"갤럭시 퀀텀2","SM-A236S":"갤럭시 퀀텀3"
 };
 
-// ── 아이폰 해상도+iOS 버전 매핑 ─────────────────
+// ── 아이폰: 물리 해상도(가로x세로) → 후보 모델키 (최신순) ─────────
+// 같은 해상도를 여러 기종이 공유하므로, iOS 버전으로 1차 필터 후
+// 그래도 겹치면 화면에서 한 번 탭으로 확정한다.
 var IP = {
-  // 아이폰 16 시리즈
-  "1320x2868":[18,99,["아이폰 16 Pro Max"]],
-  "1206x2622":[18,99,["아이폰 16 Pro"]],
-  "1179x2556_18":[18,99,["아이폰 16","아이폰 15 Pro"]],
-  "1290x2796_18":[18,99,["아이폰 16 Plus","아이폰 15 Plus"]],
-  // 아이폰 15 시리즈
-  "1179x2556_17":[17,17,["아이폰 15 Pro"]],
-  "1290x2796_17":[17,17,["아이폰 15 Plus","아이폰 14 Pro Max"]],
-  // 아이폰 14 시리즈
-  "1179x2556_0":[0,16,["아이폰 14 Pro"]],
-  "1290x2796_0":[0,16,["아이폰 14 Pro Max"]],
-  "1170x2532_17":[17,99,["아이폰 14","아이폰 13"]],
-  // 아이폰 13 시리즈
-  "1170x2532_0":[0,16,["아이폰 13"]],
-  "1080x2340_15":[15,99,["아이폰 13 mini"]],
-  "1284x2778_15":[15,99,["아이폰 13 Pro Max"]],
-  "1170x2532_15":[15,15,["아이폰 13 Pro","아이폰 13"]],
-  // 아이폰 12 시리즈
-  "1080x2340_0":[0,14,["아이폰 12 mini"]],
-  "1284x2778_0":[0,14,["아이폰 12 Pro Max"]],
-  "1170x2532_14":[14,14,["아이폰 12 Pro","아이폰 12"]],
-  "1080x2340_14":[14,14,["아이폰 12 mini"]],
-  // 아이폰 11 시리즈
-  "1125x2436_13":[13,99,["아이폰 11 Pro"]],
-  "1242x2688":[0,99,["아이폰 11 Pro Max","아이폰 XS Max"]],
-  "828x1792_13":[13,99,["아이폰 11"]],
-  // 아이폰 XS/XR/X
-  "1125x2436_0":[0,12,["아이폰 X","아이폰 XS"]],
-  "828x1792_0":[0,12,["아이폰 XR"]],
-  // 아이폰 8/7/SE
-  "750x1334":[0,99,["아이폰 SE (2~3세대)","아이폰 8","아이폰 7"]],
-  "1080x1920":[0,99,["아이폰 6s Plus","아이폰 7 Plus"]],
-  "750x1334_10":[10,99,["아이폰 SE (2세대)","아이폰 8"]],
-  // 아이폰 6
-  "750x1334_0":[0,9,["아이폰 6s","아이폰 6"]],
-  "1080x1920_0":[0,9,["아이폰 6s Plus","아이폰 6 Plus"]],
+  "1320x2868":["16promax"],
+  "1206x2622":["16pro"],
+  "1290x2796":["16plus","15promax","15plus","14promax"],
+  "1179x2556":["16","15pro","15","14pro"],
+  "1170x2532":["16e","14","13pro","13","12pro","12"],
+  "1284x2778":["14plus","13promax","12promax"],
+  "1080x2340":["13mini","12mini"],
+  "1242x2688":["11promax","xsmax"],
+  "1125x2436":["11pro","xs","x"],
+  "828x1792":["11","xr"],
+  "750x1334":["se3","se2","8","7","6s","6"],
+  "1080x1920":["8plus","7plus","6splus","6plus"],
+  "640x1136":["se1","5s"]
 };
+
+// ── 아이폰 모델 정보: n=이름, y=출시연도, s=화면크기, l=카메라 렌즈수, min=출시 iOS ──
+var M = {
+  "16promax":{n:"아이폰 16 Pro Max",y:2024,s:'6.9"',l:3,min:18},
+  "16pro":{n:"아이폰 16 Pro",y:2024,s:'6.3"',l:3,min:18},
+  "16plus":{n:"아이폰 16 Plus",y:2024,s:'6.7"',l:2,min:18},
+  "16":{n:"아이폰 16",y:2024,s:'6.1"',l:2,min:18},
+  "16e":{n:"아이폰 16e",y:2025,s:'6.1"',l:1,min:18},
+  "15promax":{n:"아이폰 15 Pro Max",y:2023,s:'6.7"',l:3,min:17},
+  "15pro":{n:"아이폰 15 Pro",y:2023,s:'6.1"',l:3,min:17},
+  "15plus":{n:"아이폰 15 Plus",y:2023,s:'6.7"',l:2,min:17},
+  "15":{n:"아이폰 15",y:2023,s:'6.1"',l:2,min:17},
+  "14promax":{n:"아이폰 14 Pro Max",y:2022,s:'6.7"',l:3,min:16},
+  "14pro":{n:"아이폰 14 Pro",y:2022,s:'6.1"',l:3,min:16},
+  "14plus":{n:"아이폰 14 Plus",y:2022,s:'6.7"',l:2,min:16},
+  "14":{n:"아이폰 14",y:2022,s:'6.1"',l:2,min:16},
+  "13promax":{n:"아이폰 13 Pro Max",y:2021,s:'6.7"',l:3,min:15},
+  "13pro":{n:"아이폰 13 Pro",y:2021,s:'6.1"',l:3,min:15},
+  "13":{n:"아이폰 13",y:2021,s:'6.1"',l:2,min:15},
+  "13mini":{n:"아이폰 13 mini",y:2021,s:'5.4"',l:2,min:15},
+  "12promax":{n:"아이폰 12 Pro Max",y:2020,s:'6.7"',l:3,min:14},
+  "12pro":{n:"아이폰 12 Pro",y:2020,s:'6.1"',l:3,min:14},
+  "12":{n:"아이폰 12",y:2020,s:'6.1"',l:2,min:14},
+  "12mini":{n:"아이폰 12 mini",y:2020,s:'5.4"',l:2,min:14},
+  "11promax":{n:"아이폰 11 Pro Max",y:2019,s:'6.5"',l:3,min:13},
+  "11pro":{n:"아이폰 11 Pro",y:2019,s:'5.8"',l:3,min:13},
+  "11":{n:"아이폰 11",y:2019,s:'6.1"',l:2,min:13},
+  "xsmax":{n:"아이폰 XS Max",y:2018,s:'6.5"',l:2,min:12},
+  "xs":{n:"아이폰 XS",y:2018,s:'5.8"',l:2,min:12},
+  "xr":{n:"아이폰 XR",y:2018,s:'6.1"',l:1,min:12},
+  "x":{n:"아이폰 X",y:2017,s:'5.8"',l:2,min:11},
+  "se3":{n:"아이폰 SE (3세대)",y:2022,s:'4.7"',l:1,min:15},
+  "se2":{n:"아이폰 SE (2세대)",y:2020,s:'4.7"',l:1,min:13},
+  "8plus":{n:"아이폰 8 Plus",y:2017,s:'5.5"',l:2,min:11},
+  "8":{n:"아이폰 8",y:2017,s:'4.7"',l:1,min:11},
+  "7plus":{n:"아이폰 7 Plus",y:2016,s:'5.5"',l:2,min:10},
+  "7":{n:"아이폰 7",y:2016,s:'4.7"',l:1,min:10},
+  "6splus":{n:"아이폰 6s Plus",y:2015,s:'5.5"',l:1,min:9},
+  "6s":{n:"아이폰 6s",y:2015,s:'4.7"',l:1,min:9},
+  "6plus":{n:"아이폰 6 Plus",y:2014,s:'5.5"',l:1,min:8},
+  "6":{n:"아이폰 6",y:2014,s:'4.7"',l:1,min:8},
+  "se1":{n:"아이폰 SE (1세대)",y:2016,s:'4.0"',l:1,min:9},
+  "5s":{n:"아이폰 5s",y:2013,s:'4.0"',l:1,min:7}
+};
+
+// 전체 목록(최신순) — 자동 감지 실패 시 직접 선택용
+var IP_ALL = ["16promax","16pro","16plus","16","16e","15promax","15pro","15plus","15","14promax","14pro","14plus","14","13promax","13pro","13","13mini","12promax","12pro","12","12mini","11promax","11pro","11","xsmax","xs","xr","x","se3","se2","8plus","8","7plus","7","6splus","6s","6plus","6"];
 
 function makeResult(bgClass, modelName, modelCode, osStr, screenStr) {
   return '<div class="result-card '+bgClass+'">'
@@ -228,29 +271,36 @@ if (isSamsung) {
 
 } else if (/iPhone/.test(ua)) {
   var vm = ua.match(/OS (\d+)_(\d+)/);
-  var ios = vm ? parseInt(vm[1]) : 0;
+  var ios = vm ? parseInt(vm[1], 10) : 0;
   var iosStr = vm ? 'iOS '+vm[1]+'.'+vm[2] : 'iOS';
-  var pw = Math.round(Math.min(screen.width,screen.height)*devicePixelRatio);
-  var ph = Math.round(Math.max(screen.width,screen.height)*devicePixelRatio);
-  var base = pw+'x'+ph;
-  var cands = null;
-  var suffixes = ['_'+ios,'_18','_17','_15','_14','_13','_10','_0',''];
-  for (var i=0; i<suffixes.length; i++) {
-    var key = base+suffixes[i];
-    if (IP[key] && ios>=IP[key][0] && ios<=IP[key][1]) { cands=IP[key][2]; break; }
-  }
-  if (!cands) cands = ['아이폰 ('+pw+'×'+ph+')'];
+  var dpr = window.devicePixelRatio || 2;
+  var pw = Math.round(Math.min(screen.width, screen.height) * dpr);
+  var ph = Math.round(Math.max(screen.width, screen.height) * dpr);
+  var keyRes = pw + 'x' + ph;
+  var screenStr = screen.width + '×' + screen.height;
 
-  if (cands.length===1) {
-    out.innerHTML = makeResult('apple-bg', cands[0], '', iosStr, screen.width+'×'+screen.height);
-  } else {
-    var html = makeResult('apple-bg', cands[0], '아래에서 정확한 기종을 골라주세요 👇', iosStr, screen.width+'×'+screen.height);
-    html += '<div class="pick-title">🤔 비슷한 기종이 여럿 있어요</div>';
-    html += '<div class="pick-sub">한 번만 탭하면 돼요 😊</div>';
-    for (var j=0; j<cands.length; j++) {
-      html += '<button class="pick-btn" onclick="sel(this,\''+cands[j]+'\')">'+cands[j]+'</button>';
+  // 1) 물리 해상도로 후보 추출
+  var keys = IP[keyRes] ? IP[keyRes].slice(0) : null;
+  // 2) iOS 버전으로 불가능한(기기 출시 iOS보다 낮은) 후보 제거
+  if (keys && ios > 0) {
+    var filtered = [];
+    for (var i = 0; i < keys.length; i++) {
+      if (M[keys[i]] && ios >= M[keys[i]].min) filtered.push(keys[i]);
     }
-    out.innerHTML = html;
+    if (filtered.length) keys = filtered;
+  }
+
+  if (keys && keys.length === 1) {
+    // 정확히 한 기종으로 확정
+    out.innerHTML = makeResult('apple-bg', M[keys[0]].n, hintLine(keys[0]), iosStr, screenStr);
+  } else if (keys && keys.length > 1) {
+    // 화면이 같은 기종이 여럿 → 힌트 보고 원탭 확정
+    out.innerHTML = makeResult('apple-bg', '아이폰', '아래에서 내 기종을 골라주세요 👇', iosStr, screenStr)
+      + pickerHtml('🤔 화면이 같은 기종이 여럿 있어요', '카메라·크기 힌트를 보고 한 번만 탭하세요 😊', keys);
+  } else {
+    // 해상도 매칭 실패(디스플레이 확대/축소 등) → 직접 선택
+    out.innerHTML = makeResult('apple-bg', '아이폰', '아래에서 내 기종을 직접 골라주세요 👇', iosStr, screenStr)
+      + pickerHtml('📱 아이폰 기종을 골라주세요', '설정의 화면 확대/축소 때문에 자동 감지가 어려워요', allKeys(ios));
   }
 
 } else if (/Android/.test(ua)) {
@@ -276,11 +326,55 @@ if (isSamsung) {
     +'</div>';
 }
 
-function sel(btn, name) {
-  document.getElementById('modelNm').textContent = name;
+// ── 아이폰 선택 UI 헬퍼 (모든 브라우저 호환: ES5, 인라인 onclick) ──
+function lensTxt(l){ return l >= 3 ? '카메라 3개' : (l === 2 ? '카메라 2개' : '카메라 1개'); }
+
+function hintLine(k){ var m = M[k]; return m ? (m.y + '년 · ' + m.s + ' · ' + lensTxt(m.l)) : ''; }
+
+function escq(s){ return String(s).replace(/'/g, "\\'"); }
+
+function pickBtn(k){
+  var m = M[k];
+  if (!m) return '';
+  return '<button type="button" class="pick-btn" onclick="sel(this,\'' + escq(m.n) + '\')">'
+    + '<span class="pn">' + m.n + '</span>'
+    + '<span class="ph">' + m.y + '년 · ' + m.s + ' · ' + lensTxt(m.l) + '</span>'
+    + '</button>';
+}
+
+function pickerHtml(title, sub, keys){
+  var h = '<div class="pick-title">' + title + '</div><div class="pick-sub">' + sub + '</div>';
+  for (var i = 0; i < keys.length; i++) h += pickBtn(keys[i]);
+  return h;
+}
+
+// iOS 버전으로 가볍게 거른 전체 후보(최신순)
+function allKeys(ios){
+  var r = [];
+  for (var i = 0; i < IP_ALL.length; i++){
+    var m = M[IP_ALL[i]];
+    if (m && (ios === 0 || ios >= m.min)) r.push(IP_ALL[i]);
+  }
+  return r;
+}
+
+// 선택지(피커)만 제거하고 확정된 기종명만 남긴다
+function removePicker(){
+  var btns = document.querySelectorAll('.pick-btn');
+  for (var i = btns.length - 1; i >= 0; i--) btns[i].parentNode.removeChild(btns[i]);
+  var rest = ['.pick-title', '.pick-sub'];
+  for (var s = 0; s < rest.length; s++){
+    var el = document.querySelector(rest[s]);
+    if (el) el.parentNode.removeChild(el);
+  }
+}
+
+function sel(btn, name){
+  var nm = document.getElementById('modelNm');
+  if (nm) nm.textContent = name;
   var sub = document.getElementById('modelSub');
-  if(sub) sub.textContent = '✅ 선택 완료!';
-  btn.parentNode.remove();
+  if (sub) sub.textContent = '✅ 선택 완료!';
+  removePicker();
 }
 </script>
 </body>
